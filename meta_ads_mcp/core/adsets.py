@@ -104,6 +104,7 @@ async def create_adset(
     start_time: str = None,
     end_time: str = None,
     dsa_beneficiary: str = None,
+    dsa_payor: str = None,
     promoted_object: Dict[str, Any] = None,
     destination_type: str = None,
     access_token: str = None
@@ -127,6 +128,7 @@ async def create_adset(
         start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800')
         end_time: End time in ISO 8601 format
         dsa_beneficiary: DSA beneficiary (person/organization benefiting from ads) for European compliance
+        dsa_payor: DSA payor (person/organization paying for ads) for European compliance
         promoted_object: Mobile app configuration for APP_INSTALLS campaigns. Required fields: application_id, object_store_url.
                         Optional fields: custom_event_type, pixel_id, page_id.
                         Example: {"application_id": "123456789012345", "object_store_url": "https://apps.apple.com/app/id123456789"}
@@ -246,6 +248,10 @@ async def create_adset(
     # Add DSA beneficiary if provided
     if dsa_beneficiary:
         params["dsa_beneficiary"] = dsa_beneficiary
+    
+    # Add DSA payor if provided
+    if dsa_payor:
+        params["dsa_payor"] = dsa_payor
     
     # Add mobile app parameters if provided
     if promoted_object:
