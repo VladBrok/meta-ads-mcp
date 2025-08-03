@@ -92,6 +92,7 @@ async def create_campaign(
     objective: str = None,
     status: str = "PAUSED",
     special_ad_categories: List[str] = None,
+    special_ad_category_country: str = None,
     daily_budget = None,
     lifetime_budget = None,
     buying_type: str = None,
@@ -112,6 +113,7 @@ async def create_campaign(
         objective: Campaign objective. Validates ad objectives. enum{BRAND_AWARENESS, LEAD_GENERATION, LINK_CLICKS, CONVERSIONS, OUTCOME_TRAFFIC, etc.}.
         status: Initial campaign status (default: PAUSED)
         special_ad_categories: List of special ad categories if applicable
+        special_ad_category_country: Country for special ad categories (e.g., 'NL', 'DE', 'US')
         daily_budget: Daily budget in account currency (in cents) as a string (only used if use_adset_level_budgets=False)
         lifetime_budget: Lifetime budget in account currency (in cents) as a string (only used if use_adset_level_budgets=False)
         buying_type: Buying type (e.g., 'AUCTION')
@@ -176,6 +178,9 @@ async def create_campaign(
     
     if ab_test_control_setups:
         params["ab_test_control_setups"] = json.dumps(ab_test_control_setups)
+    
+    if special_ad_category_country:
+        params["special_ad_category_country"] = special_ad_category_country
     
     try:
         data = await make_api_request(endpoint, access_token, params, method="POST")
