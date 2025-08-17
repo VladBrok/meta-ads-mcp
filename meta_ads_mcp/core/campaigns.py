@@ -36,7 +36,7 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
         if "data" in accounts_data and accounts_data["data"]:
             account_id = accounts_data["data"][0]["id"]
         else:
-            return json.dumps({"error": "No account ID specified and no accounts found for user"}, indent=2)
+            return json.dumps({"error": "No account ID specified and no accounts found for user"})
     
     endpoint = f"{account_id}/campaigns"
     params = {
@@ -53,34 +53,46 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
 @meta_api_tool
 async def get_campaign_details(access_token: str = None, campaign_id: str = None) -> str:
     """
-    Get detailed information about a specific campaign.
+    Get comprehensive detailed information about a specific campaign.
 
-    Note: This function requests a specific set of fields ('id,name,objective,status,...'). 
-    The Meta API offers many other fields for campaigns (e.g., 'effective_status', 'source_campaign_id', etc.) 
-    that could be added to the 'fields' parameter in the code if needed.
+    This tool retrieves ALL available campaign fields from the Facebook Graph API, providing a complete
+    view of campaign configuration, status, budgets, targeting settings, and performance attributes.
+    
+    KEY FIELDS RETURNED:
+    - Basic Info: id, name, objective, status, effective_status, configured_status
+    - Budgets & Spend: daily_budget, lifetime_budget, budget_remaining, spend_cap
+    - Timing: start_time, stop_time, created_time, updated_time, last_budget_toggling_time
+    - Targeting & Attribution: special_ad_categories, special_ad_category_country, primary_attribution
+    - Optimization: bid_strategy, buying_type, pacing_type, campaign_group_active_time
+    - Advanced Features: is_skadnetwork_attribution, brand_lift_studies, promoted_object
+    - Relationships: source_campaign, source_campaign_id, account_id, adlabels
+    - Capabilities: can_create_brand_lift_study, can_use_spend_cap, issues_info
+    - Settings: smart_promotion_type, budget_rebalance_flag, is_budget_schedule_enabled
+    
+    This provides comprehensive campaign data for AI decision-making and analysis.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         campaign_id: Meta Ads campaign ID
     """
     if not campaign_id:
-        return json.dumps({"error": "No campaign ID provided"}, indent=2)
+        return json.dumps({"error": "No campaign ID provided"})
     
     endpoint = f"{campaign_id}"
     params = {
-        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category_country,budget_remaining,configured_status"
+        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category,special_ad_category_country,budget_remaining,configured_status,account_id,adlabels,boosted_object_id,brand_lift_studies,budget_rebalance_flag,campaign_group_active_time,can_create_brand_lift_study,can_use_spend_cap,effective_status,has_secondary_skadnetwork_reporting,is_adset_budget_sharing_enabled,is_budget_schedule_enabled,is_skadnetwork_attribution,issues_info,last_budget_toggling_time,pacing_type,primary_attribution,promoted_object,smart_promotion_type,source_campaign,source_campaign_id,spend_cap,topline_id"
     }
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -126,13 +138,13 @@ async def create_campaign(
     """
     # Check required parameters
     if not account_id:
-        return json.dumps({"error": "No account ID provided"}, indent=2)
+        return json.dumps({"error": "No account ID provided"})
     
     if not name:
-        return json.dumps({"error": "No campaign name provided"}, indent=2)
+        return json.dumps({"error": "No campaign name provided"})
         
     if not objective:
-        return json.dumps({"error": "No campaign objective provided"}, indent=2)
+        return json.dumps({"error": "No campaign objective provided"})
     
     # Special_ad_categories is required by the API, set default if not provided
     if special_ad_categories is None:
@@ -190,14 +202,14 @@ async def create_campaign(
             data["budget_strategy"] = "ad_set_level"
             data["note"] = "Campaign created with ad set level budgets. Set budgets when creating ad sets within this campaign."
         
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     except Exception as e:
         error_msg = str(e)
         return json.dumps({
             "error": "Failed to create campaign",
             "details": error_msg,
             "params_sent": params
-        }, indent=2)
+        })
 
 
 @mcp_server.tool()
@@ -238,7 +250,7 @@ async def update_campaign(
         use_adset_level_budgets: If True, removes campaign-level budgets to switch to ad set level budgets
     """
     if not campaign_id:
-        return json.dumps({"error": "No campaign ID provided"}, indent=2)
+        return json.dumps({"error": "No campaign ID provided"})
 
     endpoint = f"{campaign_id}"
     
@@ -303,7 +315,7 @@ async def update_campaign(
         params["objective"] = objective # Caution: Objective changes might reset learning or be restricted
 
     if not params:
-        return json.dumps({"error": "No update parameters provided"}, indent=2)
+        return json.dumps({"error": "No update parameters provided"})
 
     try:
         # Use POST method for updates as per Meta API documentation
@@ -314,7 +326,7 @@ async def update_campaign(
             data["budget_strategy"] = "ad_set_level"
             data["note"] = "Campaign updated to use ad set level budgets. Set budgets when creating ad sets within this campaign."
         
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     except Exception as e:
         error_msg = str(e)
         # Include campaign_id in error for better context
@@ -322,4 +334,4 @@ async def update_campaign(
             "error": f"Failed to update campaign {campaign_id}",
             "details": error_msg,
             "params_sent": params # Be careful about logging sensitive data if any
-        }, indent=2) 
+        }) 

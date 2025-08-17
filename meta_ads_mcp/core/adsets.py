@@ -27,7 +27,7 @@ async def get_adsets(access_token: str = None, account_id: str = None, limit: in
         if "data" in accounts_data and accounts_data["data"]:
             account_id = accounts_data["data"][0]["id"]
         else:
-            return json.dumps({"error": "No account ID specified and no accounts found for user"}, indent=2)
+            return json.dumps({"error": "No account ID specified and no accounts found for user"})
     
     # Change endpoint based on whether campaign_id is provided
     if campaign_id:
@@ -48,32 +48,47 @@ async def get_adsets(access_token: str = None, account_id: str = None, limit: in
 
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
 @meta_api_tool
 async def get_adset_details(access_token: str = None, adset_id: str = None) -> str:
     """
-    Get detailed information about a specific ad set.
+    Get comprehensive detailed information about a specific ad set.
+
+    This tool retrieves ALL available ad set fields from the Facebook Graph API, providing a complete
+    view of ad set configuration, status, budgets, targeting settings, optimization parameters, and performance attributes.
+    
+    KEY FIELDS RETURNED:
+    - Basic Info: id, name, account_id, campaign_id, status, effective_status, configured_status
+    - Budgets & Spend: daily_budget, lifetime_budget, budget_remaining, daily_min_spend_target, daily_spend_cap, lifetime_min_spend_target, lifetime_spend_cap
+    - Timing & Schedule: start_time, end_time, created_time, updated_time, adset_schedule, time_based_ad_rotation_intervals
+    - Bidding & Optimization: bid_amount, bid_strategy, bid_adjustments, bid_constraints, bid_info, optimization_goal, optimization_sub_event
+    - Targeting & Attribution: targeting, targeting_optimization_types, attribution_spec, frequency_control_specs
+    - Creative & Content: promoted_object, destination_type, creative_sequence, is_dynamic_creative, asset_feed_id
+    - Campaign Relations: campaign, campaign_active_time, campaign_attribution, source_adset, source_adset_id
+    - Platform & Placement: instagram_user_id, use_new_app_click, contextual_bundling_spec
+    - Compliance & Regulation: dsa_beneficiary, dsa_payor, regional_regulated_categories, regional_regulation_identities
+    - Performance & Learning: learning_stage_info, issues_info, recommendations, review_feedback
+    - Advanced Features: brand_safety_config, rf_prediction_id, multi_optimization_goal_weight, value_rule_set_id
+    - Labels & Organization: adlabels, time_based_ad_rotation_id_blocks
+    - Budget Controls: recurring_budget_semantics, pacing_type, min_budget_spend_percentage
+    - Impressions & Reach: lifetime_imps, is_incremental_attribution_enabled
+    
+    This provides comprehensive ad set data for AI decision-making and analysis.
     
     Args:
-        adset_id: Meta Ads ad set ID (required)
         access_token: Meta API access token (optional - will use cached token if not provided)
-    
-    Example:
-        To call this function through MCP, pass the adset_id as the first argument:
-        {
-            "args": "YOUR_ADSET_ID"
-        }
+        adset_id: Meta Ads ad set ID
     """
     if not adset_id:
-        return json.dumps({"error": "No ad set ID provided"}, indent=2)
+        return json.dumps({"error": "No ad set ID provided"})
     
     endpoint = f"{adset_id}"
-    # Explicitly prioritize frequency_control_specs in the fields request
+    # Include ALL available ad set fields from Facebook Graph API
     params = {
-        "fields": "id,name,campaign_id,status,frequency_control_specs{event,interval_days,max_frequency},daily_budget,lifetime_budget,targeting,bid_amount,bid_strategy,optimization_goal,billing_event,start_time,end_time,created_time,updated_time,attribution_spec,destination_type,promoted_object,pacing_type,budget_remaining,dsa_beneficiary"
+        "fields": "id,name,account_id,campaign_id,status,effective_status,configured_status,daily_budget,lifetime_budget,budget_remaining,daily_min_spend_target,daily_spend_cap,lifetime_min_spend_target,lifetime_spend_cap,start_time,end_time,created_time,updated_time,adset_schedule,time_based_ad_rotation_intervals,bid_amount,bid_strategy,bid_adjustments,bid_constraints,bid_info,optimization_goal,optimization_sub_event,targeting,targeting_optimization_types,attribution_spec,frequency_control_specs{event,interval_days,max_frequency},promoted_object,destination_type,creative_sequence,is_dynamic_creative,asset_feed_id,campaign,campaign_active_time,campaign_attribution,source_adset,source_adset_id,instagram_user_id,use_new_app_click,contextual_bundling_spec,dsa_beneficiary,dsa_payor,regional_regulated_categories,regional_regulation_identities,learning_stage_info,issues_info,recommendations,review_feedback,brand_safety_config,rf_prediction_id,multi_optimization_goal_weight,value_rule_set_id,adlabels,time_based_ad_rotation_id_blocks,recurring_budget_semantics,pacing_type,min_budget_spend_percentage,lifetime_imps,is_incremental_attribution_enabled,billing_event"
     }
     
     data = await make_api_request(endpoint, access_token, params)
@@ -84,7 +99,7 @@ async def get_adset_details(access_token: str = None, adset_id: str = None) -> s
             'note': 'No frequency_control_specs field was returned by the API. This means either no frequency caps are set or the API did not include this field in the response.'
         }
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -138,19 +153,19 @@ async def create_adset(
     """
     # Check required parameters
     if not account_id:
-        return json.dumps({"error": "No account ID provided"}, indent=2)
+        return json.dumps({"error": "No account ID provided"})
     
     if not campaign_id:
-        return json.dumps({"error": "No campaign ID provided"}, indent=2)
+        return json.dumps({"error": "No campaign ID provided"})
     
     if not name:
-        return json.dumps({"error": "No ad set name provided"}, indent=2)
+        return json.dumps({"error": "No ad set name provided"})
     
     if not optimization_goal:
-        return json.dumps({"error": "No optimization goal provided"}, indent=2)
+        return json.dumps({"error": "No optimization goal provided"})
     
     if not billing_event:
-        return json.dumps({"error": "No billing event provided"}, indent=2)
+        return json.dumps({"error": "No billing event provided"})
     
     # Validate mobile app parameters for APP_INSTALLS campaigns
     if optimization_goal == "APP_INSTALLS":
@@ -159,27 +174,27 @@ async def create_adset(
                 "error": "promoted_object is required for APP_INSTALLS optimization goal",
                 "details": "Mobile app campaigns must specify which app is being promoted",
                 "required_fields": ["application_id", "object_store_url"]
-            }, indent=2)
+            })
         
         # Validate promoted_object structure
         if not isinstance(promoted_object, dict):
             return json.dumps({
                 "error": "promoted_object must be a dictionary",
                 "example": {"application_id": "123456789012345", "object_store_url": "https://apps.apple.com/app/id123456789"}
-            }, indent=2)
+            })
         
         # Validate required promoted_object fields
         if "application_id" not in promoted_object:
             return json.dumps({
                 "error": "promoted_object missing required field: application_id",
                 "details": "application_id is the Facebook app ID for your mobile app"
-            }, indent=2)
+            })
         
         if "object_store_url" not in promoted_object:
             return json.dumps({
                 "error": "promoted_object missing required field: object_store_url", 
                 "details": "object_store_url should be the App Store or Google Play URL for your app"
-            }, indent=2)
+            })
         
         # Validate store URL format
         store_url = promoted_object["object_store_url"]
@@ -194,7 +209,7 @@ async def create_adset(
                 "error": "Invalid object_store_url format",
                 "details": "URL must be from App Store (apps.apple.com) or Google Play (play.google.com)",
                 "provided_url": store_url
-            }, indent=2)
+            })
     
     # Validate destination_type if provided
     if destination_type:
@@ -203,7 +218,7 @@ async def create_adset(
             return json.dumps({
                 "error": f"Invalid destination_type: {destination_type}",
                 "valid_values": valid_destination_types
-            }, indent=2)
+            })
     
     # Basic targeting is required if not provided
     if not targeting:
@@ -262,7 +277,7 @@ async def create_adset(
     
     try:
         data = await make_api_request(endpoint, access_token, params, method="POST")
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     except Exception as e:
         error_msg = str(e)
         
@@ -273,27 +288,27 @@ async def create_adset(
                 "details": error_msg,
                 "params_sent": params,
                 "permission_required": True
-            }, indent=2)
+            })
         elif "dsa_beneficiary" in error_msg.lower() and ("not supported" in error_msg.lower() or "parameter" in error_msg.lower()):
             return json.dumps({
                 "error": "DSA beneficiary parameter not supported in this API version. Please set DSA beneficiary manually in Facebook Ads Manager.",
                 "details": error_msg,
                 "params_sent": params,
                 "manual_setup_required": True
-            }, indent=2)
+            })
         elif "benefits from ads" in error_msg or "DSA beneficiary" in error_msg:
             return json.dumps({
                 "error": "DSA beneficiary required for European compliance. Please provide the person or organization that benefits from ads in this ad set.",
                 "details": error_msg,
                 "params_sent": params,
                 "dsa_required": True
-            }, indent=2)
+            })
         else:
             return json.dumps({
                 "error": "Failed to create ad set",
                 "details": error_msg,
                 "params_sent": params
-            }, indent=2)
+            })
 
 
 @mcp_server.tool()
@@ -320,7 +335,7 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
         access_token: Meta API access token (optional - will use cached token if not provided)
     """
     if not adset_id:
-        return json.dumps({"error": "No ad set ID provided"}, indent=2)
+        return json.dumps({"error": "No ad set ID provided"})
     
     params = {}
     
@@ -354,14 +369,14 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
         params['lifetime_budget'] = str(lifetime_budget)
     
     if not params:
-        return json.dumps({"error": "No update parameters provided"}, indent=2)
+        return json.dumps({"error": "No update parameters provided"})
 
     endpoint = f"{adset_id}"
     
     try:
         # Use POST method for updates as per Meta API documentation
         data = await make_api_request(endpoint, access_token, params, method="POST")
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     except Exception as e:
         error_msg = str(e)
         # Include adset_id in error for better context
@@ -369,4 +384,4 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
             "error": f"Failed to update ad set {adset_id}",
             "details": error_msg,
             "params_sent": params
-        }, indent=2) 
+        }) 

@@ -33,6 +33,7 @@ class TestInsightsActionsAndValues:
             mock.return_value = {
                 "data": [
                     {
+                        "account_id": "act_701351919139047",
                         "campaign_id": "test_campaign_id",
                         "campaign_name": "Test Campaign",
                         "impressions": "1000",
@@ -80,8 +81,33 @@ class TestInsightsActionsAndValues:
         """Valid account ID for testing"""
         return "act_701351919139047"
     
+    @pytest.fixture
+    def mock_get_campaigns(self):
+        """Mock for the get_campaigns function"""
+        with patch('meta_ads_mcp.core.insights.get_campaigns') as mock:
+            # Mock to return different responses based on status_filter parameter
+            async def mock_campaigns_response(access_token, account_id, limit, status_filter):
+                if status_filter == "ACTIVE":
+                    return json.dumps({
+                        "data": [
+                            {"id": "campaign1", "name": "Active Campaign 1", "status": "ACTIVE"},
+                            {"id": "campaign2", "name": "Active Campaign 2", "status": "ACTIVE"}
+                        ]
+                    })
+                elif status_filter == "PAUSED":
+                    return json.dumps({
+                        "data": [
+                            {"id": "campaign3", "name": "Paused Campaign 1", "status": "PAUSED"}
+                        ]
+                    })
+                else:
+                    return json.dumps({"data": []})
+            
+            mock.side_effect = mock_campaigns_response
+            yield mock
+    
     @pytest.mark.asyncio
-    async def test_actions_and_action_values_included_in_fields(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_and_action_values_included_in_fields(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test that actions and action_values are included in the fields parameter"""
         
         result = await get_insights(
@@ -114,9 +140,21 @@ class TestInsightsActionsAndValues:
         assert len(result_data['data']) > 0
         assert 'actions' in result_data['data'][0]
         assert 'action_values' in result_data['data'][0]
+        
+        # Verify aggregated results include campaign counts
+        assert 'aggregated_results' in result_data
+        aggregated = result_data['aggregated_results']
+        assert 'total_spend' in aggregated
+        assert 'total_leads' in aggregated
+        assert 'active_campaigns' in aggregated
+        assert 'paused_campaigns' in aggregated
+        
+        # Verify campaign counts match our mock data
+        assert aggregated['active_campaigns'] == 2  # 2 active campaigns in mock
+        assert aggregated['paused_campaigns'] == 1  # 1 paused campaign in mock
     
     @pytest.mark.asyncio
-    async def test_purchase_data_extraction(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_purchase_data_extraction(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test that purchase data can be extracted from actions and action_values"""
         
         result = await get_insights(
@@ -151,7 +189,7 @@ class TestInsightsActionsAndValues:
         assert purchase_value == "500.00", f"Expected purchase value 500.00, got {purchase_value}"
     
     @pytest.mark.asyncio
-    async def test_actions_at_adset_level(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_at_adset_level(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test actions and action_values at adset level"""
         
         result = await get_insights(
@@ -175,7 +213,7 @@ class TestInsightsActionsAndValues:
         assert 'data' in result_data
     
     @pytest.mark.asyncio
-    async def test_actions_at_ad_level(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_at_ad_level(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test actions and action_values at ad level"""
         
         result = await get_insights(
@@ -199,7 +237,7 @@ class TestInsightsActionsAndValues:
         assert 'data' in result_data
     
     @pytest.mark.asyncio
-    async def test_actions_with_custom_time_range(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_with_custom_time_range(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test actions and action_values with custom time range"""
         
         custom_time_range = {"since": "2024-01-01", "until": "2024-01-31"}
@@ -226,7 +264,7 @@ class TestInsightsActionsAndValues:
         assert 'data' in result_data
     
     @pytest.mark.asyncio
-    async def test_actions_with_breakdown(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_with_breakdown(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test actions and action_values with breakdown dimension"""
         
         result = await get_insights(
@@ -252,7 +290,7 @@ class TestInsightsActionsAndValues:
         assert 'data' in result_data
     
     @pytest.mark.asyncio
-    async def test_actions_without_object_id(self, mock_api_request, mock_auth_manager):
+    async def test_actions_without_object_id(self, mock_api_request, mock_auth_manager, mock_get_campaigns):
         """Test error handling when no object_id is provided"""
         
         result = await get_insights(
@@ -276,7 +314,7 @@ class TestInsightsActionsAndValues:
         mock_api_request.assert_not_called()
     
     @pytest.mark.asyncio
-    async def test_actions_with_invalid_time_range(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_with_invalid_time_range(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test error handling with invalid time range"""
         
         invalid_time_range = {"since": "2024-01-01"}  # Missing "until"
@@ -303,7 +341,7 @@ class TestInsightsActionsAndValues:
         mock_api_request.assert_not_called()
     
     @pytest.mark.asyncio
-    async def test_actions_api_error_handling(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_api_error_handling(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test error handling when API call fails"""
         
         # Mock API to raise an exception
@@ -327,7 +365,7 @@ class TestInsightsActionsAndValues:
         assert 'API Error' in result_data['error']
     
     @pytest.mark.asyncio
-    async def test_actions_fields_completeness(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_actions_fields_completeness(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test that all required fields are included in the request"""
         
         result = await get_insights(
@@ -357,7 +395,7 @@ class TestInsightsActionsAndValues:
             assert field in fields, f"Field '{field}' not found in fields parameter"
     
     @pytest.mark.asyncio
-    async def test_multiple_action_types(self, mock_api_request, mock_auth_manager, valid_campaign_id):
+    async def test_multiple_action_types(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
         """Test handling of multiple action types in the response"""
         
         result = await get_insights(
@@ -386,6 +424,69 @@ class TestInsightsActionsAndValues:
         
         assert 'purchase' in action_value_types, "Purchase action_value type not found"
         assert 'lead' in action_value_types, "Lead action_value type not found"
+    
+    @pytest.mark.asyncio
+    async def test_campaign_counts_in_aggregated_results(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_campaign_id):
+        """Test that campaign counts are included in aggregated results"""
+        
+        result = await get_insights(
+            object_id=valid_campaign_id,
+            time_range="last_30d",
+            level="campaign"
+        )
+        
+        # Parse the result
+        result_data = json.loads(result)
+        
+        # Verify aggregated results exist and contain campaign counts
+        assert 'aggregated_results' in result_data
+        aggregated = result_data['aggregated_results']
+        
+        # Check all expected fields are present
+        assert 'total_spend' in aggregated
+        assert 'total_leads' in aggregated
+        assert 'active_campaigns' in aggregated
+        assert 'paused_campaigns' in aggregated
+        
+        # Verify the campaign counts match our mock data
+        assert aggregated['active_campaigns'] == 2, f"Expected 2 active campaigns, got {aggregated['active_campaigns']}"
+        assert aggregated['paused_campaigns'] == 1, f"Expected 1 paused campaign, got {aggregated['paused_campaigns']}"
+        
+        # Verify get_campaigns was called twice (once for ACTIVE, once for PAUSED)
+        assert mock_get_campaigns.call_count == 2
+        
+        # Verify the calls were made with correct parameters
+        calls = mock_get_campaigns.call_args_list
+        
+        # First call should be for ACTIVE campaigns
+        active_call = calls[0]
+        assert active_call[0][3] == "ACTIVE"  # status_filter parameter
+        
+        # Second call should be for PAUSED campaigns  
+        paused_call = calls[1]
+        assert paused_call[0][3] == "PAUSED"  # status_filter parameter
+    
+    @pytest.mark.asyncio
+    async def test_campaign_counts_with_account_id_object(self, mock_api_request, mock_auth_manager, mock_get_campaigns, valid_account_id):
+        """Test campaign counts when object_id is an account ID"""
+        
+        result = await get_insights(
+            object_id=valid_account_id,
+            time_range="last_30d",
+            level="account"
+        )
+        
+        # Parse the result
+        result_data = json.loads(result)
+        
+        # Verify aggregated results include campaign counts
+        assert 'aggregated_results' in result_data
+        aggregated = result_data['aggregated_results']
+        
+        assert 'active_campaigns' in aggregated
+        assert 'paused_campaigns' in aggregated
+        assert aggregated['active_campaigns'] == 2
+        assert aggregated['paused_campaigns'] == 1
 
 
 class TestInsightsActionsAndValuesIntegration:

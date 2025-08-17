@@ -36,7 +36,7 @@ async def get_ads(access_token: str = None, account_id: str = None, limit: int =
         if "data" in accounts_data and accounts_data["data"]:
             account_id = accounts_data["data"][0]["id"]
         else:
-            return json.dumps({"error": "No account ID specified and no accounts found for user"}, indent=2)
+            return json.dumps({"error": "No account ID specified and no accounts found for user"})
     
     # Prioritize adset_id over campaign_id - use adset-specific endpoint
     if adset_id:
@@ -62,30 +62,46 @@ async def get_ads(access_token: str = None, account_id: str = None, limit: int =
 
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
 @meta_api_tool
 async def get_ad_details(access_token: str = None, ad_id: str = None) -> str:
     """
-    Get detailed information about a specific ad.
+    Get comprehensive detailed information about a specific ad.
+
+    This tool retrieves ALL available ad fields from the Facebook Graph API, providing a complete
+    view of ad configuration, status, creative content, targeting settings, and performance attributes.
+    
+    KEY FIELDS RETURNED:
+    - Basic Info: id, name, account_id, adset_id, campaign_id, status, effective_status, configured_status
+    - Creative & Content: creative, preview_shareable_link
+    - Timing & Schedule: ad_schedule_start_time, ad_schedule_end_time, created_time, updated_time, ad_active_time
+    - Bidding & Performance: bid_amount, last_updated_by_app_id
+    - Targeting & Audience: audience_id, engagement_audience, tracking_specs, conversion_domain
+    - Platform Relations: campaign, adset, source_ad, source_ad_id
+    - Quality & Review: ad_review_feedback, issues_info, recommendations
+    - Labels & Organization: adlabels
+    
+    This provides comprehensive ad data for AI decision-making and analysis.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         ad_id: Meta Ads ad ID
     """
     if not ad_id:
-        return json.dumps({"error": "No ad ID provided"}, indent=2)
+        return json.dumps({"error": "No ad ID provided"})
         
     endpoint = f"{ad_id}"
+    # Include ALL available ad fields from Facebook Graph API
     params = {
-        "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,bid_amount,conversion_domain,tracking_specs,preview_shareable_link"
+        "fields": "id,name,account_id,adset_id,campaign_id,status,effective_status,configured_status,creative,ad_schedule_start_time,ad_schedule_end_time,created_time,updated_time,bid_amount,conversion_domain,tracking_specs,preview_shareable_link,adlabels,ad_review_feedback,audience_id,engagement_audience,issues_info,last_updated_by_app_id,recommendations,source_ad,source_ad_id,ad_active_time,campaign,adset"
     }
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -116,16 +132,16 @@ async def create_ad(
     """
     # Check required parameters
     if not account_id:
-        return json.dumps({"error": "No account ID provided"}, indent=2)
+        return json.dumps({"error": "No account ID provided"})
     
     if not name:
-        return json.dumps({"error": "No ad name provided"}, indent=2)
+        return json.dumps({"error": "No ad name provided"})
     
     if not adset_id:
-        return json.dumps({"error": "No ad set ID provided"}, indent=2)
+        return json.dumps({"error": "No ad set ID provided"})
     
     if not creative_id:
-        return json.dumps({"error": "No creative ID provided"}, indent=2)
+        return json.dumps({"error": "No creative ID provided"})
     
     endpoint = f"{account_id}/ads"
     
@@ -146,32 +162,52 @@ async def create_ad(
     
     try:
         data = await make_api_request(endpoint, access_token, params, method="POST")
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     except Exception as e:
         error_msg = str(e)
         return json.dumps({
             "error": "Failed to create ad",
             "details": error_msg,
             "params_sent": params
-        }, indent=2)
+        })
 
 
 @mcp_server.tool()
 @meta_api_tool
 async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
     """
-    Get creative details for a specific ad. Best if combined with get_ad_image to get the full image.
+    Get comprehensive detailed information about ad creatives for a specific ad.
+
+    This tool retrieves ALL available ad creative fields from the Facebook Graph API, providing complete
+    information about creative content, configuration, assets, targeting, branding, and technical specifications.
+    
+    KEY FIELDS RETURNED:
+    - Basic Info: id, name, status, account_id, actor_id, thumbnail_url, thumbnail_id
+    - Creative Content: body, title, image_hash, image_url, image_crops, video_id, playable_asset_id
+    - Story & Link Data: object_story_spec, object_story_id, effective_object_story_id, link_url, link_og_id, link_destination_display_url
+    - Asset Management: asset_feed_spec, image_urls_for_viewing, product_data, product_set_id, destination_set_id
+    - Call to Action: call_to_action, call_to_action_type
+    - Platform & Placement: platform_customizations, portrait_customizations, instagram_permalink_url, instagram_user_id, threads_user_id
+    - Branding & Sponsorship: branded_content, branded_content_sponsor_page_id, facebook_branded_content
+    - Dynamic Ads: dynamic_ad_voice, degrees_of_freedom_spec, bundle_folder_id, template_url, template_url_spec, categorization_criteria, category_media_source
+    - Authorization & Compliance: authorization_category, effective_authorization_category, ad_disclaimer_spec, regional_regulation_disclaimer_spec
+    - App & Installation: applink_treatment, enable_direct_install, enable_launch_instant_app, object_store_url, use_page_actor_override
+    - Advanced Features: interactive_components_spec, contextual_multi_ads, creative_sourcing_spec, recommender_settings, collaborative_ads_lsb_image_bank_id
+    - Social & Messaging: messenger_sponsored_message, page_welcome_message, source_facebook_post_id, source_instagram_media_id, effective_instagram_media_id
+    - Metadata & Organization: adlabels, url_tags, object_id, object_type, object_url, place_page_set_id, referral_id, photo_album_source_object_story_id
+
+    This provides exhaustive ad creative data for comprehensive AI analysis and decision-making.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         ad_id: Meta Ads ad ID
     """
     if not ad_id:
-        return json.dumps({"error": "No ad ID provided"}, indent=2)
+        return json.dumps({"error": "No ad ID provided"})
         
     endpoint = f"{ad_id}/adcreatives"
     params = {
-        "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,asset_feed_spec,image_urls_for_viewing"
+        "fields": "id,name,status,account_id,actor_id,ad_disclaimer_spec,adlabels,applink_treatment,authorization_category,body,branded_content,branded_content_sponsor_page_id,bundle_folder_id,call_to_action,call_to_action_type,categorization_criteria,category_media_source,collaborative_ads_lsb_image_bank_id,contextual_multi_ads,creative_sourcing_spec,degrees_of_freedom_spec,destination_set_id,destination_spec,dynamic_ad_voice,effective_authorization_category,effective_instagram_media_id,effective_object_story_id,enable_direct_install,enable_launch_instant_app,facebook_branded_content,image_crops,image_hash,image_url,instagram_permalink_url,instagram_user_id,interactive_components_spec,link_destination_display_url,link_og_id,link_url,messenger_sponsored_message,object_id,object_store_url,object_story_id,object_story_spec,object_type,object_url,page_welcome_message,photo_album_source_object_story_id,place_page_set_id,platform_customizations,playable_asset_id,portrait_customizations,product_data,product_set_id,recommender_settings,referral_id,regional_regulation_disclaimer_spec,source_facebook_post_id,source_instagram_media_id,template_url,template_url_spec,threads_user_id,thumbnail_id,thumbnail_url,title,url_tags,use_page_actor_override,video_id,asset_feed_spec,image_urls_for_viewing"
     }
     
     data = await make_api_request(endpoint, access_token, params)
@@ -181,7 +217,7 @@ async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
         for creative in data['data']:
             creative['image_urls_for_viewing'] = extract_creative_image_urls(creative)
 
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -401,7 +437,7 @@ async def save_ad_image_locally(access_token: str = None, ad_id: str = None, out
         The file path to the saved image, or an error message string.
     """
     if not ad_id:
-        return json.dumps({"error": "No ad ID provided"}, indent=2)
+        return json.dumps({"error": "No ad ID provided"})
         
     print(f"Attempting to get and save creative image for ad {ad_id}")
     
@@ -414,19 +450,19 @@ async def save_ad_image_locally(access_token: str = None, ad_id: str = None, out
     ad_data = await make_api_request(ad_endpoint, access_token, ad_params)
     
     if "error" in ad_data:
-        return json.dumps({"error": f"Could not get ad data - {json.dumps(ad_data)}"}, indent=2)
+        return json.dumps({"error": f"Could not get ad data - {json.dumps(ad_data)}"})
     
     account_id = ad_data.get("account_id")
     if not account_id:
-        return json.dumps({"error": "No account ID found for ad"}, indent=2)
+        return json.dumps({"error": "No account ID found for ad"})
     
     if "creative" not in ad_data:
-        return json.dumps({"error": "No creative found for this ad"}, indent=2)
+        return json.dumps({"error": "No creative found for this ad"})
         
     creative_data = ad_data.get("creative", {})
     creative_id = creative_data.get("id")
     if not creative_id:
-        return json.dumps({"error": "No creative ID found"}, indent=2)
+        return json.dumps({"error": "No creative ID found"})
     
     # Get creative details to find image hash
     creative_endpoint = f"{creative_id}"
@@ -456,7 +492,7 @@ async def save_ad_image_locally(access_token: str = None, ad_id: str = None, out
 
 
     if not image_hashes:
-        return json.dumps({"error": "No image hashes found in creative or fallback"}, indent=2)
+        return json.dumps({"error": "No image hashes found in creative or fallback"})
 
     print(f"Found image hashes: {image_hashes}")
     
@@ -472,16 +508,16 @@ async def save_ad_image_locally(access_token: str = None, ad_id: str = None, out
     image_data = await make_api_request(image_endpoint, access_token, image_params)
     
     if "error" in image_data:
-        return json.dumps({"error": f"Failed to get image data - {json.dumps(image_data)}"}, indent=2)
+        return json.dumps({"error": f"Failed to get image data - {json.dumps(image_data)}"})
     
     if "data" not in image_data or not image_data["data"]:
-        return json.dumps({"error": "No image data returned from API"}, indent=2)
+        return json.dumps({"error": "No image data returned from API"})
         
     first_image = image_data["data"][0]
     image_url = first_image.get("url")
     
     if not image_url:
-        return json.dumps({"error": "No valid image URL found in API response"}, indent=2)
+        return json.dumps({"error": "No valid image URL found in API response"})
         
     print(f"Downloading image from URL: {image_url}")
     
@@ -489,7 +525,7 @@ async def save_ad_image_locally(access_token: str = None, ad_id: str = None, out
     image_bytes = await download_image(image_url)
     
     if not image_bytes:
-        return json.dumps({"error": "Failed to download image"}, indent=2)
+        return json.dumps({"error": "Failed to download image"})
         
     try:
         # Ensure output directory exists
@@ -506,10 +542,10 @@ async def save_ad_image_locally(access_token: str = None, ad_id: str = None, out
             f.write(image_bytes)
             
         print(f"Image saved successfully to: {filepath}")
-        return json.dumps({"filepath": filepath}, indent=2) # Return JSON with filepath
+        return json.dumps({"filepath": filepath}) # Return JSON with filepath
 
     except Exception as e:
-        return json.dumps({"error": f"Failed to save image: {str(e)}"}, indent=2)
+        return json.dumps({"error": f"Failed to save image: {str(e)}"})
 
 
 @mcp_server.tool()
@@ -534,7 +570,7 @@ async def update_ad(
         access_token: Meta API access token (optional - will use cached token if not provided)
     """
     if not ad_id:
-        return json.dumps({"error": "Ad ID is required"}, indent=2)
+        return json.dumps({"error": "Ad ID is required"})
 
     params = {}
     if status:
@@ -549,14 +585,14 @@ async def update_ad(
         params["creative"] = json.dumps({"creative_id": creative_id})
 
     if not params:
-        return json.dumps({"error": "No update parameters provided (status, bid_amount, tracking_specs, or creative_id)"}, indent=2)
+        return json.dumps({"error": "No update parameters provided (status, bid_amount, tracking_specs, or creative_id)"})
 
     endpoint = f"{ad_id}"
     try:
         data = await make_api_request(endpoint, access_token, params, method='POST')
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     except Exception as e:
-        return json.dumps({"error": f"Failed to update ad: {str(e)}"}, indent=2)
+        return json.dumps({"error": f"Failed to update ad: {str(e)}"})
 
 
 @mcp_server.tool()
@@ -581,10 +617,10 @@ async def upload_ad_image(
     """
     # Check required parameters
     if not account_id:
-        return json.dumps({"error": "No account ID provided"}, indent=2)
+        return json.dumps({"error": "No account ID provided"})
     
     if not image_path:
-        return json.dumps({"error": "No image path provided"}, indent=2)
+        return json.dumps({"error": "No image path provided"})
     
     # Ensure account_id has the 'act_' prefix for API compatibility
     if not account_id.startswith("act_"):
@@ -592,7 +628,7 @@ async def upload_ad_image(
     
     # Check if image file exists
     if not os.path.exists(image_path):
-        return json.dumps({"error": f"Image file not found: {image_path}"}, indent=2)
+        return json.dumps({"error": f"Image file not found: {image_path}"})
     
     try:
         # Read image file
@@ -620,13 +656,13 @@ async def upload_ad_image(
         print(f"Uploading image to Facebook Ad Account {account_id}")
         data = await make_api_request(endpoint, access_token, params, method="POST")
         
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     
     except Exception as e:
         return json.dumps({
             "error": "Failed to upload image",
             "details": str(e)
-        }, indent=2)
+        })
 
 
 @mcp_server.tool()
@@ -671,10 +707,10 @@ async def create_ad_creative(
     """
     # Check required parameters
     if not account_id:
-        return json.dumps({"error": "No account ID provided"}, indent=2)
+        return json.dumps({"error": "No account ID provided"})
     
     if not image_hash:
-        return json.dumps({"error": "No image hash provided"}, indent=2)
+        return json.dumps({"error": "No image hash provided"})
     
     if not name:
         name = f"Creative {int(time.time())}"
@@ -702,20 +738,20 @@ async def create_ad_creative(
                         "Use search_pages_by_name to find specific pages",
                         "Provide a page_id parameter manually"
                     ]
-                }, indent=2)
+                })
         except Exception as e:
             return json.dumps({
                 "error": "Error during page discovery",
                 "details": str(e),
                 "suggestion": "Please provide a page_id parameter or use get_account_pages to find available pages"
-            }, indent=2)
+            })
     
     # Validate headline/description parameters - cannot mix simple and complex
     if headline and headlines:
-        return json.dumps({"error": "Cannot specify both 'headline' and 'headlines'. Use 'headline' for single headline or 'headlines' for multiple."}, indent=2)
+        return json.dumps({"error": "Cannot specify both 'headline' and 'headlines'. Use 'headline' for single headline or 'headlines' for multiple."})
     
     if description and descriptions:
-        return json.dumps({"error": "Cannot specify both 'description' and 'descriptions'. Use 'description' for single description or 'descriptions' for multiple."}, indent=2)
+        return json.dumps({"error": "Cannot specify both 'description' and 'descriptions'. Use 'description' for single description or 'descriptions' for multiple."})
     
     # Convert simple parameters to complex format for internal processing
     final_headlines = None
@@ -734,17 +770,17 @@ async def create_ad_creative(
     # Validate dynamic creative parameters
     if final_headlines:
         if len(final_headlines) > 5:
-            return json.dumps({"error": "Maximum 5 headlines allowed for dynamic creatives"}, indent=2)
+            return json.dumps({"error": "Maximum 5 headlines allowed for dynamic creatives"})
         for i, h in enumerate(final_headlines):
             if len(h) > 40:
-                return json.dumps({"error": f"Headline {i+1} exceeds 40 character limit"}, indent=2)
+                return json.dumps({"error": f"Headline {i+1} exceeds 40 character limit"})
     
     if final_descriptions:
         if len(final_descriptions) > 5:
-            return json.dumps({"error": "Maximum 5 descriptions allowed for dynamic creatives"}, indent=2)
+            return json.dumps({"error": "Maximum 5 descriptions allowed for dynamic creatives"})
         for i, d in enumerate(final_descriptions):
             if len(d) > 125:
-                return json.dumps({"error": f"Description {i+1} exceeds 125 character limit"}, indent=2)
+                return json.dumps({"error": f"Description {i+1} exceeds 125 character limit"})
     
     # Prepare the creative data
     creative_data = {
@@ -829,16 +865,16 @@ async def create_ad_creative(
                 "success": True,
                 "creative_id": creative_id,
                 "details": creative_details
-            }, indent=2)
+            })
         
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     
     except Exception as e:
         return json.dumps({
             "error": "Failed to create ad creative",
             "details": str(e),
             "creative_data_sent": creative_data
-        }, indent=2)
+        })
 
 
 @mcp_server.tool()
@@ -875,14 +911,14 @@ async def update_ad_creative(
     """
     # Check required parameters
     if not creative_id:
-        return json.dumps({"error": "No creative ID provided"}, indent=2)
+        return json.dumps({"error": "No creative ID provided"})
     
     # Validate headline/description parameters - cannot mix simple and complex
     if headline and headlines:
-        return json.dumps({"error": "Cannot specify both 'headline' and 'headlines'. Use 'headline' for single headline or 'headlines' for multiple."}, indent=2)
+        return json.dumps({"error": "Cannot specify both 'headline' and 'headlines'. Use 'headline' for single headline or 'headlines' for multiple."})
     
     if description and descriptions:
-        return json.dumps({"error": "Cannot specify both 'description' and 'descriptions'. Use 'description' for single description or 'descriptions' for multiple."}, indent=2)
+        return json.dumps({"error": "Cannot specify both 'description' and 'descriptions'. Use 'description' for single description or 'descriptions' for multiple."})
     
     # Convert simple parameters to complex format for internal processing
     final_headlines = None
@@ -901,17 +937,17 @@ async def update_ad_creative(
     # Validate dynamic creative parameters
     if final_headlines:
         if len(final_headlines) > 5:
-            return json.dumps({"error": "Maximum 5 headlines allowed for dynamic creatives"}, indent=2)
+            return json.dumps({"error": "Maximum 5 headlines allowed for dynamic creatives"})
         for i, h in enumerate(final_headlines):
             if len(h) > 40:
-                return json.dumps({"error": f"Headline {i+1} exceeds 40 character limit"}, indent=2)
+                return json.dumps({"error": f"Headline {i+1} exceeds 40 character limit"})
     
     if final_descriptions:
         if len(final_descriptions) > 5:
-            return json.dumps({"error": "Maximum 5 descriptions allowed for dynamic creatives"}, indent=2)
+            return json.dumps({"error": "Maximum 5 descriptions allowed for dynamic creatives"})
         for i, d in enumerate(final_descriptions):
             if len(d) > 125:
-                return json.dumps({"error": f"Description {i+1} exceeds 125 character limit"}, indent=2)
+                return json.dumps({"error": f"Description {i+1} exceeds 125 character limit"})
     
     # Prepare the update data
     update_data = {}
@@ -977,16 +1013,16 @@ async def update_ad_creative(
                 "success": True,
                 "creative_id": creative_id,
                 "details": creative_details
-            }, indent=2)
+            })
         
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     
     except Exception as e:
         return json.dumps({
             "error": "Failed to update ad creative",
             "details": str(e),
             "update_data_sent": update_data
-        }, indent=2)
+        })
 
 
 async def _discover_pages_for_account(account_id: str, access_token: str) -> dict:
@@ -1109,7 +1145,7 @@ async def _search_pages_by_name_core(access_token: str, account_id: str, search_
                 "data": [],
                 "message": "No pages found for this account",
                 "details": page_discovery_result.get("message", "Page discovery failed")
-            }, indent=2)
+            })
         
         # Create a single page result
         page_data = {
@@ -1135,20 +1171,20 @@ async def _search_pages_by_name_core(access_token: str, account_id: str, search_
                 "search_term": search_term,
                 "total_found": len(filtered_pages),
                 "total_available": len(all_pages_data["data"])
-            }, indent=2)
+            })
         else:
             # Return all pages if no search term provided
             return json.dumps({
                 "data": all_pages_data["data"],
                 "total_available": len(all_pages_data["data"]),
                 "note": "Use search_term parameter to filter pages by name"
-            }, indent=2)
+            })
     
     except Exception as e:
         return json.dumps({
             "error": "Failed to search pages by name",
             "details": str(e)
-        }, indent=2)
+        })
 
 
 @mcp_server.tool()
@@ -1167,7 +1203,7 @@ async def search_pages_by_name(access_token: str = None, account_id: str = None,
     """
     # Check required parameters
     if not account_id:
-        return json.dumps({"error": "No account ID provided"}, indent=2)
+        return json.dumps({"error": "No account ID provided"})
     
     # Call the core function
     result = await _search_pages_by_name_core(access_token, account_id, search_term)
@@ -1189,7 +1225,7 @@ async def get_account_pages(access_token: str = None, account_id: str = None) ->
     """
     # Check required parameters
     if not account_id:
-        return json.dumps({"error": "No account ID provided"}, indent=2)
+        return json.dumps({"error": "No account ID provided"})
     
     # Handle special case for 'me'
     if account_id == "me":
@@ -1200,12 +1236,12 @@ async def get_account_pages(access_token: str = None, account_id: str = None) ->
             }
             
             user_pages_data = await make_api_request(endpoint, access_token, params)
-            return json.dumps(user_pages_data, indent=2)
+            return json.dumps(user_pages_data)
         except Exception as e:
             return json.dumps({
                 "error": "Failed to get user pages",
                 "details": str(e)
-            }, indent=2)
+            })
     
     # Ensure account_id has the 'act_' prefix for regular accounts
     if not account_id.startswith("act_"):
@@ -1369,20 +1405,20 @@ async def get_account_pages(access_token: str = None, account_id: str = None) ->
                     })
             
             if page_details["data"]:
-                return json.dumps(page_details, indent=2)
+                return json.dumps(page_details)
         
         # If all approaches failed, return empty data with a message
         return json.dumps({
             "data": [],
             "message": "No pages found associated with this account",
             "suggestion": "Create a Facebook page and connect it to this ad account, or ensure existing pages are properly connected through Business Manager"
-        }, indent=2)
+        })
         
     except Exception as e:
         return json.dumps({
             "error": "Failed to get account pages",
             "details": str(e)
-        }, indent=2)
+        })
 
 
 
