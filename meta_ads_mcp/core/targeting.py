@@ -21,7 +21,7 @@ async def search_interests(access_token: str = None, query: str = None, limit: i
         JSON string containing interest data with id, name, audience_size, and path fields
     """
     if not query:
-        return json.dumps({"error": "No search query provided"}, indent=2)
+        return json.dumps({"error": "No search query provided"})
     
     endpoint = "search"
     params = {
@@ -32,7 +32,7 @@ async def search_interests(access_token: str = None, query: str = None, limit: i
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -50,7 +50,7 @@ async def get_interest_suggestions(access_token: str = None, interest_list: List
         JSON string containing suggested interests with id, name, audience_size, and description fields
     """
     if not interest_list:
-        return json.dumps({"error": "No interest list provided"}, indent=2)
+        return json.dumps({"error": "No interest list provided"})
     
     endpoint = "search"
     params = {
@@ -61,7 +61,7 @@ async def get_interest_suggestions(access_token: str = None, interest_list: List
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -110,7 +110,7 @@ async def estimate_audience_size(
     
     if is_backwards_compatible_call and not targeting:
         if not interest_list and not interest_fbid_list:
-            return json.dumps({"error": "No interest list or FBID list provided"}, indent=2)
+            return json.dumps({"error": "No interest list or FBID list provided"})
         
         endpoint = "search"
         params = {
@@ -125,14 +125,14 @@ async def estimate_audience_size(
         
         data = await make_api_request(endpoint, access_token, params)
         
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     
     # Comprehensive audience estimation using delivery_estimate API
     if not account_id:
         return json.dumps({
             "error": "account_id is required for comprehensive audience estimation",
             "details": "For simple interest validation, use interest_list or interest_fbid_list parameters"
-        }, indent=2)
+        })
     
     if not targeting:
         return json.dumps({
@@ -145,7 +145,7 @@ async def estimate_audience_size(
                     {"interests": [{"id": "6003371567474"}]}
                 ]
             }
-        }, indent=2)
+        })
     
     # Build reach estimate request (using correct Meta API endpoint)
     endpoint = f"{account_id}/reachestimate"
@@ -176,7 +176,7 @@ async def estimate_audience_size(
                 "raw_response": data
             }
             
-            return json.dumps(formatted_response, indent=2)
+            return json.dumps(formatted_response)
         else:
             return json.dumps({
                 "error": "No estimation data returned from Meta API",
@@ -186,7 +186,7 @@ async def estimate_audience_size(
                     "response_type": str(type(data)),
                     "endpoint_used": f"{account_id}/reachestimate"
                 }
-            }, indent=2)
+            })
     
     except Exception as e:
         # Check if this is the specific Business Manager system user permission error
@@ -221,7 +221,7 @@ async def estimate_audience_size(
                         },
                         "individual_interest_data": fallback_data,
                         "note": "Individual interest audience sizes provided as fallback. Comprehensive targeting via reachestimate endpoint failed."
-                    }, indent=2)
+                    })
                 except:
                     pass
             
@@ -235,14 +235,14 @@ async def estimate_audience_size(
                     "available_alternative": "Use interest_list or interest_fbid_list parameters for individual interest validation"
                 },
                 "raw_error": error_str
-            }, indent=2)
+            })
         else:
             return json.dumps({
                 "error": f"Failed to get audience estimation from reachestimate endpoint: {str(e)}",
                 "details": "Check targeting parameters and account permissions",
                 "error_type": "general_api_error",
                 "endpoint_used": f"{account_id}/reachestimate"
-            }, indent=2)
+            })
 
 
 @mcp_server.tool()
@@ -267,7 +267,7 @@ async def search_behaviors(access_token: str = None, limit: int = 50) -> str:
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -294,7 +294,7 @@ async def search_demographics(access_token: str = None, demographic_class: str =
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -315,7 +315,7 @@ async def search_geo_locations(access_token: str = None, query: str = None,
         JSON string containing location data with key, name, type, and geographic hierarchy information
     """
     if not query:
-        return json.dumps({"error": "No search query provided"}, indent=2)
+        return json.dumps({"error": "No search query provided"})
     
     endpoint = "search"
     params = {
@@ -329,4 +329,4 @@ async def search_geo_locations(access_token: str = None, query: str = None,
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2) 
+    return json.dumps(data) 

@@ -62,8 +62,8 @@ class MetaAdsMCPClient:
         
         print(f"\n🔄 Making request: {method}")
         print(f"   URL: {self.endpoint}")
-        print(f"   Headers: {json.dumps(dict(self.headers), indent=2)}")
-        print(f"   Payload: {json.dumps(payload, indent=2)}")
+        print(f"   Headers: {json.dumps(dict(self.headers))}")
+        print(f"   Payload: {json.dumps(payload)}")
         
         try:
             response = requests.post(

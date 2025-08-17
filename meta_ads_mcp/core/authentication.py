@@ -65,7 +65,7 @@ async def get_login_link(access_token: str = None) -> str:
                     "token_info": f"Token preview: {access_token[:10]}...",
                     "authentication_method": "manual_token",
                     "ready_to_use": "You can now use all Meta Ads MCP tools and commands."
-                }, indent=2)
+                })
             
             # Check if Pipeboard token is working
             token = pipeboard_auth_manager.get_access_token()
@@ -76,7 +76,7 @@ async def get_login_link(access_token: str = None) -> str:
                     "token_info": f"Token preview: {token[:10]}...",
                     "authentication_method": "pipeboard_token",
                     "ready_to_use": "You can now use all Meta Ads MCP tools and commands."
-                }, indent=2)
+                })
             
             # Start Pipeboard auth flow
             auth_data = pipeboard_auth_manager.initiate_auth_flow()
@@ -91,7 +91,7 @@ async def get_login_link(access_token: str = None) -> str:
                     "authentication_method": "pipeboard_oauth",
                     "what_happens_next": "After clicking, you'll be redirected to Meta's authentication page. Once completed, your token will be automatically saved.",
                     "token_duration": "Your token will be valid for approximately 60 days."
-                }, indent=2)
+                })
             else:
                 return json.dumps({
                     "message": "❌ Authentication Error",
@@ -102,7 +102,7 @@ async def get_login_link(access_token: str = None) -> str:
                         "Try again in a few moments"
                     ],
                     "authentication_method": "pipeboard_oauth_failed"
-                }, indent=2)
+                })
                 
         except Exception as e:
             logger.error(f"Error initiating Pipeboard auth flow: {e}")
@@ -117,7 +117,7 @@ async def get_login_link(access_token: str = None) -> str:
                 ],
                 "get_help": "Contact support if the issue persists",
                 "authentication_method": "pipeboard_error"
-            }, indent=2)
+            })
     elif callback_server_disabled:
         # Production OAuth flow - use Pipeboard OAuth endpoints directly
         logger.info("Production OAuth flow - using Pipeboard OAuth endpoints")
@@ -129,7 +129,7 @@ async def get_login_link(access_token: str = None) -> str:
             "markdown_link": "[🚀 Sign in to Pipeboard](https://pipeboard.co/auth/signin)",
             "what_to_do": "Click the link above to sign in to your Pipeboard account and complete authentication.",
             "authentication_method": "production_oauth"
-        }, indent=2)
+        })
     else:
         # Original Meta authentication flow (development/local)
         # Check if we have a cached token
@@ -147,7 +147,7 @@ async def get_login_link(access_token: str = None) -> str:
                 "expires_in": auth_manager.token_info.expires_in if hasattr(auth_manager, "token_info") else None,
                 "authentication_method": "meta_oauth",
                 "ready_to_use": "You can now use all Meta Ads MCP tools and commands."
-            }, indent=2)
+            })
         
         # IMPORTANT: Start the callback server first by calling our helper function
         # This ensures the server is ready before we provide the URL to the user
@@ -173,7 +173,7 @@ async def get_login_link(access_token: str = None) -> str:
                     "🔧 Check if another service is using the required ports"
                 ],
                 "authentication_method": "meta_oauth_disabled"
-            }, indent=2)
+            })
         
         # Check if we can exchange for long-lived tokens
         token_exchange_supported = bool(META_APP_SECRET)
@@ -195,4 +195,4 @@ async def get_login_link(access_token: str = None) -> str:
         # Wait a moment to ensure the server is fully started
         await asyncio.sleep(1)
         
-        return json.dumps(response, indent=2) 
+        return json.dumps(response) 

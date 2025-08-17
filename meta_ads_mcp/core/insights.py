@@ -49,9 +49,16 @@ async def get_insights(access_token: str = None, object_id: str = None,
                             marketing_messages_btn_name, impression_view_time_advertiser_hour_v2, comscore_market,
                             comscore_market_code
         level: Level of aggregation (ad, adset, campaign, account)
+    
+    Returns:
+        JSON response containing insights data with aggregated results:
+        - Original insights data in 'data' array
+        - 'aggregated_results' object with:
+          - total_spend: Sum of all spend values across all results
+          - total_leads: Sum of all lead actions across all results
     """
     if not object_id:
-        return json.dumps({"error": "No object ID provided"}, indent=2)
+        return json.dumps({"error": "No object ID provided"})
         
     endpoint = f"{object_id}/insights"
     params = {
@@ -65,7 +72,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
         if "since" in time_range and "until" in time_range:
             params["time_range"] = json.dumps(time_range)
         else:
-            return json.dumps({"error": "Custom time_range must contain both 'since' and 'until' keys in YYYY-MM-DD format"}, indent=2)
+            return json.dumps({"error": "Custom time_range must contain both 'since' and 'until' keys in YYYY-MM-DD format"})
     else:
         # Use preset date range
         params["date_preset"] = time_range
@@ -75,7 +82,35 @@ async def get_insights(access_token: str = None, object_id: str = None,
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    # Calculate aggregated results only if we have valid insights data (not error responses)
+    if isinstance(data, dict) and 'data' in data and isinstance(data['data'], list) and 'error' not in data:
+        total_spend = 0.0
+        total_leads = 0
+        
+        for record in data['data']:
+            # Calculate total spend
+            if 'spend' in record and record['spend']:
+                try:
+                    total_spend += float(record['spend'])
+                except (ValueError, TypeError):
+                    pass
+            
+            # Calculate total leads from actions
+            if 'actions' in record and isinstance(record['actions'], list):
+                for action in record['actions']:
+                    if action.get('action_type') == 'lead' and action.get('value'):
+                        try:
+                            total_leads += int(action['value'])
+                        except (ValueError, TypeError):
+                            pass
+        
+        # Add aggregated results to the response
+        data['aggregated_results'] = {
+            'total_spend': round(total_spend, 2),
+            'total_leads': total_leads
+        }
+    
+    return json.dumps(data)
 
 
 

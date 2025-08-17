@@ -51,7 +51,7 @@ if ENABLE_REPORT_GENERATION:
                     "required_parameter": "account_id",
                     "format": "act_XXXXXXXXX"
                 }
-            }, indent=2)
+            })
         
         # For campaign and comparison reports, campaign_ids are required
         if report_type in ["campaign", "comparison"] and not campaign_ids:
@@ -62,7 +62,7 @@ if ENABLE_REPORT_GENERATION:
                     "required_parameter": "campaign_ids",
                     "format": "Array of campaign ID strings"
                 }
-            }, indent=2)
+            })
 
         # Return premium feature upgrade message
         return json.dumps({
@@ -130,4 +130,4 @@ if ENABLE_REPORT_GENERATION:
                     "publisher_platform"
                 ]
             }
-        }, indent=2) 
+        }) 

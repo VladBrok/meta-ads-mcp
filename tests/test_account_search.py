@@ -148,7 +148,7 @@ class AccountSearchTester:
                 
                 print(f"✅ Found {len(found_account_ids)} account IDs: {found_account_ids}")
                 print(f"📊 Expected accounts found: {results[query]['found_expected_accounts']}/{results[query]['total_expected']}")
-                print(f"🔍 Raw response: {json.dumps(parsed_content, indent=2)}")
+                print(f"🔍 Raw response: {json.dumps(parsed_content)}")
                 
             except json.JSONDecodeError:
                 results[query] = {
@@ -250,7 +250,7 @@ class AccountSearchTester:
             content = response_data.get("content", [{}])[0].get("text", "")
             try:
                 account_data = json.loads(content)
-                print(f"✅ get_ad_accounts returned: {json.dumps(account_data, indent=2)}")
+                print(f"✅ get_ad_accounts returned: {json.dumps(account_data)}")
             except:
                 print(f"⚠️  get_ad_accounts raw response: {content}")
         else:

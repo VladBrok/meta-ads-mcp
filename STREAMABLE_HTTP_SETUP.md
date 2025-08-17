@@ -234,7 +234,7 @@ class MetaAdsMCPClient:
 # Usage
 client = MetaAdsMCPClient(token="your_pipeboard_token")
 result = client.call_tool("get_ad_accounts", {"limit": 5})
-print(json.dumps(result, indent=2))
+print(json.dumps(result))
 ```
 
 ### JavaScript/Node.js Client

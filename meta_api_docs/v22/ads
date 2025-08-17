@@ -1,0 +1,323 @@
+
+Docs
+Marketing API
+API Reference
+Ad Account
+Ads
+Marketing API
+Overview
+Get Started
+Ad Creative
+Bidding
+Ad Rules Engine
+Audiences
+Insights API
+Brand Safety and Suitability
+Best Practices
+Troubleshooting
+API Reference
+Ad Account
+Account Controls
+Activities
+Ad Place Page Sets
+Ad Place Page Sets Async
+Adcreatives
+Adimages
+Adlabels
+Adplayables
+Adrules Library
+Ads
+Ads Reporting Mmm Reports
+Ads Reporting Mmm Schedulers
+Adsets
+Adspixels
+Advertisable Applications
+Advideos
+Agencies
+Applications
+Assigned Users
+Async Batch Requests
+Asyncadcreatives
+Asyncadrequestsets
+Broadtargetingcategories
+Campaigns
+Connected Instagram Accounts
+Customaudiences
+Customaudiencestos
+Customconversions
+Delivery Estimate
+Deprecatedtargetingadsets
+Dsa Recommendations
+Generatepreviews
+Impacting Ad Studies
+Insights
+Instagram Accounts
+Mcmeconversions
+Minimum Budgets
+Product Audiences
+Promote Pages
+Publisher Block Lists
+Reachestimate
+Reachfrequencypredictions
+Saved Audiences
+Subscribed Apps
+Targetingbrowse
+Targetingsearch
+Tracking
+Ad Creative
+Ad Image
+Ad Previews
+Ad Preview Plugin
+Business
+Business Role Request
+Business User
+Currencies
+High Demand Period
+Image Crop
+Product Catalog
+System User
+Changelog
+Graph API Version
+v22.0
+Ad Account Ads
+Ads belonging to this ad account.
+
+Reading
+Ads belonging to this ad account
+
+HTTPPHP SDKJavaScript SDKAndroid SDKiOS SDKGraph API Explorer
+GET /v23.0/act_{ad-account-id}/ads HTTP/1.1
+Host: graph.facebook.com
+Parameters
+Parameter	Description
+date_preset
+enum{today, yesterday, this_month, last_month, this_quarter, maximum, data_maximum, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d, last_week_mon_sun, last_week_sun_sat, last_quarter, last_year, this_week_mon_today, this_week_sun_today, this_year}
+Predefine date range used to aggregate insights metrics
+
+effective_status
+list<string>
+Filter ads by effective status
+
+time_range
+{'since':YYYY-MM-DD,'until':YYYY-MM-DD}
+Date range used to aggregate insights metrics
+
+updated_since
+integer
+Time since the Ad has been updated.
+
+Fields
+Reading from this edge will return a JSON formatted result:
+
+{
+    "data": [],
+    "paging": {},
+    "summary": {}
+}
+
+
+data
+A list of Ad nodes.
+paging
+For more details about pagination, see the Graph API guide.
+summary
+Aggregated information about the edge, such as counts. Specify the fields to fetch in the summary param (like summary=insights).
+
+Field	Description
+insights
+Edge<AdsInsights>
+Analytics summary for all objects
+
+total_count
+unsigned int32
+Total number of Ads returned by the query
+
+Default
+Error Codes
+Error	Description
+613	Calls to this api have exceeded the rate limit.
+200	Permissions error
+100	Invalid parameter
+190	Invalid OAuth 2.0 Access Token
+80004	There have been too many calls to this ad-account. Wait a bit and try again. For more info, please refer to https://developers.facebook.com/docs/graph-api/overview/rate-limiting#ads-management.
+3018	The start date of the time range cannot be beyond 37 months from the current date
+2500	Error parsing graph query
+2635	You are calling a deprecated version of the Ads API. Please update to the latest version.
+Creating
+You can make a POST request to ads edge from the following paths:
+/act_{ad_account_id}/ads
+When posting to this edge, an Ad will be created.
+Example
+HTTPPHP SDKJavaScript SDKAndroid SDKiOS SDKcURLGraph API Explorer
+POST /v22.0/act_<AD_ACCOUNT_ID>/ads HTTP/1.1
+Host: graph.facebook.com
+
+name=My+Ad&adset_id=%3CAD_SET_ID%3E&creative=%7B%22creative_id%22%3A%22%3CCREATIVE_ID%3E%22%7D&status=PAUSED
+If you want to learn how to use the Graph API, read our Using Graph API guide.
+Parameters
+Parameter	Description
+ad_schedule_end_time
+datetime
+An optional parameter that defines the end time of an individual ad. If no end time is defined, the ad will run on the campaign’s schedule.
+
+This parameter is only available for sales and app promotion campaigns.
+
+ad_schedule_start_time
+datetime
+An optional parameter that defines the start time of an individual ad. If no start time is defined, the ad will run on the campaign’s schedule.
+
+This parameter is only available for sales and app promotion campaigns.
+
+adlabels
+list<Object>
+Ad labels associated with this ad
+
+adset_id
+int64
+The ID of the ad set, required on creation.
+
+adset_spec
+Ad set spec
+The ad set spec for this ad. When the spec is provided, adset_id field is not required.
+
+audience_id
+string
+The ID of the audience.
+
+bid_amount
+integer
+Deprecated. We no longer allow setting the bid_amount value on an ad. Please set bid_amount for the ad set.
+
+conversion_domain
+string
+The domain where conversions happen. Required to create or update an ad in a campaign that shares data with a pixel. This field will be auto-populated for existing ads by inferring from destination URLs . Note that this field should contain only the first and second level domains, and not the full URL. For example facebook.com.
+
+creative
+AdCreative
+This field is required for create. The ID or creative spec of the ad creative to be used by this ad. You can read more about creatives here. You may supply the ID within an object as follows:
+
+{"creative_id": <CREATIVE_ID>}
+or creative spec as follow:
+
+{"creative": {\"name\": \"<NAME>\", \"object_story_spec\": <SPEC>}}
+
+RequiredSupports Emoji
+creative_asset_groups_spec
+string (CreativeAssetGroupsSpec)
+creative_asset_groups_spec
+
+Supports Emoji
+date_format
+string
+The format of the date.
+
+display_sequence
+int64
+The sequence of the ad within the same campaign
+
+engagement_audience
+boolean
+Flag to create a new audience based on users who engage with this ad
+
+execution_options
+list<enum{validate_only, synchronous_ad_review, include_recommendations}>
+Default value: Set
+An execution setting
+validate_only: when this option is specified, the API call will not perform the mutation but will run through the validation rules against values of each field.
+include_recommendations: this option cannot be used by itself. When this option is used, recommendations for ad object's configuration will be included. A separate section recommendations will be included in the response, but only if recommendations for this specification exist.
+synchronous_ad_review: this option should not be used by itself. It should always be specified with validate_only. When these options are specified, the API call will perform Ads Integrity validations, which include message language checking, image 20% text rule, and so on, as well as the validation logics.
+If the call passes validation or review, response will be {"success": true}. If the call does not pass, an error will be returned with more details. These options can be used to improve any UI to display errors to the user much sooner, e.g. as soon as a new value is typed into any field corresponding to this ad object, rather than at the upload/save stage, or after review.
+
+include_demolink_hashes
+boolean
+Include the demolink hashes.
+
+name
+string
+Name of the ad.
+
+RequiredSupports Emoji
+priority
+int64
+Priority
+
+source_ad_id
+numeric string or integer
+ID of the source Ad, if applicable.
+
+status
+enum{ACTIVE, PAUSED, DELETED, ARCHIVED}
+Only ACTIVE and PAUSED are valid during creation. Other statuses can be used for update. When an ad is created, it will first go through ad review, and will have the ad status PENDING_REVIEW before it finishes review and reverts back to your selected status of ACTIVE or PAUSED. During testing, it is recommended to set ads to a PAUSED status so as to not incur accidental spend.
+
+tracking_specs
+Object
+With Tracking Specs, you log actions taken by people on your ad. See Tracking and Conversion Specs.
+
+Return Type
+This endpoint supports read-after-write and will read the node represented by id in the return type.
+Struct {
+id: numeric string,
+success: bool,
+}
+Error Codes
+Error	Description
+100	Invalid parameter
+613	Calls to this api have exceeded the rate limit.
+200	Permissions error
+368	The action attempted has been deemed abusive or is otherwise disallowed
+190	Invalid OAuth 2.0 Access Token
+194	Missing at least one required parameter
+80004	There have been too many calls to this ad-account. Wait a bit and try again. For more info, please refer to https://developers.facebook.com/docs/graph-api/overview/rate-limiting#ads-management.
+500	Message contains banned content
+2626	The request for a reach frequency campaign has failed.
+105	The number of parameters exceeded the maximum for this operation
+Updating
+You can't perform this operation on this endpoint.
+Deleting
+You can't perform this operation on this endpoint.
+On This Page
+Ad Account Ads
+Reading
+Parameters
+Fields
+Error Codes
+Creating
+Example
+Parameters
+Return Type
+Error Codes
+Updating
+Deleting
+
+Follow us on FacebookFollow us on InstagramFollow us on XFollow us on LinkedInFollow us on YouTube
+Build with Meta
+AI
+Meta Horizon OS
+Social technologies
+News
+Meta for Developers
+Blog
+Success stories
+Support
+Developer support
+Bug tool
+Platform status
+Developer community forum
+Report an incident
+Terms and policies
+Responsible platform initiatives
+Platform terms
+Developer policies
+© 2025 Meta
+About
+Careers
+Privacy Policy
+Cookies
+Terms
+
+English (US)
+
+English (US)
+Was this document helpful?
+YesNo
+Remove

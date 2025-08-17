@@ -338,7 +338,7 @@ async def search(
         return json.dumps({
             "error": "query parameter is required",
             "ids": []
-        }, indent=2)
+        })
     
     try:
         # Use the data manager to search records
@@ -351,7 +351,7 @@ async def search(
         }
         
         logger.info(f"Search successful. Query: '{query}', Results: {len(matching_ids)}")
-        return json.dumps(response, indent=2)
+        return json.dumps(response)
         
     except Exception as e:
         error_msg = str(e)
@@ -362,7 +362,7 @@ async def search(
             "details": error_msg,
             "ids": [],
             "query": query
-        }, indent=2)
+        })
 
 
 @mcp_server.tool()
@@ -390,7 +390,7 @@ async def fetch(
     if not id:
         return json.dumps({
             "error": "id parameter is required"
-        }, indent=2)
+        })
     
     try:
         # Use the data manager to fetch the record
@@ -398,13 +398,13 @@ async def fetch(
         
         if record:
             logger.info(f"Record fetched successfully: {id}")
-            return json.dumps(record, indent=2)
+            return json.dumps(record)
         else:
             logger.warning(f"Record not found: {id}")
             return json.dumps({
                 "error": f"Record not found: {id}",
                 "id": id
-            }, indent=2)
+            })
             
     except Exception as e:
         error_msg = str(e)
@@ -414,4 +414,4 @@ async def fetch(
             "error": "Failed to fetch record",
             "details": error_msg,
             "id": id
-        }, indent=2) 
+        }) 

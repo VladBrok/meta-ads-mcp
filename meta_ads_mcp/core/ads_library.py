@@ -46,10 +46,10 @@ if not DISABLE_ADS_LIBRARY:
             pass
 
         if not search_terms:
-            return json.dumps({"error": "search_terms parameter is required"}, indent=2)
+            return json.dumps({"error": "search_terms parameter is required"})
 
         if not ad_reached_countries:
-            return json.dumps({"error": "ad_reached_countries parameter is required"}, indent=2)
+            return json.dumps({"error": "ad_reached_countries parameter is required"})
 
         endpoint = "ads_archive"
         params = {
@@ -62,7 +62,7 @@ if not DISABLE_ADS_LIBRARY:
 
         try:
             data = await make_api_request(endpoint, access_token, params, method="GET")
-            return json.dumps(data, indent=2)
+            return json.dumps(data)
         except Exception as e:
             error_msg = str(e)
             # Consider logging the full error for debugging
@@ -71,4 +71,4 @@ if not DISABLE_ADS_LIBRARY:
                 "error": "Failed to search ads archive",
                 "details": error_msg,
                 "params_sent": {k: v for k, v in params.items() if k != 'access_token'} # Avoid logging token
-            }, indent=2) 
+            }) 

@@ -25,7 +25,7 @@ async def get_ad_accounts(access_token: str = None, user_id: str = "me", limit: 
     
     data = await make_api_request(endpoint, access_token, params)
     
-    return json.dumps(data, indent=2)
+    return json.dumps(data)
 
 
 @mcp_server.tool()

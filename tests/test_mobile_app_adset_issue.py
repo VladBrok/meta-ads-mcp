@@ -281,7 +281,7 @@ def main():
         else:
             print("⚠️  Error not reproduced - different response received")
             if "unexpected_response" in error_test:
-                print(f"   Response: {json.dumps(error_test['unexpected_response'], indent=2)}")
+                print(f"   Response: {json.dumps(error_test['unexpected_response'])}")
     else:
         print(f"❌ Error reproduction test failed: {error_test['error']}")
     

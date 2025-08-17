@@ -36,17 +36,17 @@ async def create_budget_schedule(
         A JSON string containing the ID of the created budget schedule or an error message.
     """
     if not campaign_id:
-        return json.dumps({"error": "Campaign ID is required"}, indent=2)
+        return json.dumps({"error": "Campaign ID is required"})
     if budget_value is None: # Check for None explicitly
-        return json.dumps({"error": "Budget value is required"}, indent=2)
+        return json.dumps({"error": "Budget value is required"})
     if not budget_value_type:
-        return json.dumps({"error": "Budget value type is required"}, indent=2)
+        return json.dumps({"error": "Budget value type is required"})
     if budget_value_type not in ["ABSOLUTE", "MULTIPLIER"]:
-        return json.dumps({"error": "Invalid budget_value_type. Must be ABSOLUTE or MULTIPLIER"}, indent=2)
+        return json.dumps({"error": "Invalid budget_value_type. Must be ABSOLUTE or MULTIPLIER"})
     if time_start is None: # Check for None explicitly to allow 0
-        return json.dumps({"error": "Time start is required"}, indent=2)
+        return json.dumps({"error": "Time start is required"})
     if time_end is None: # Check for None explicitly to allow 0
-        return json.dumps({"error": "Time end is required"}, indent=2)
+        return json.dumps({"error": "Time end is required"})
 
     endpoint = f"{campaign_id}/budget_schedules"
 
@@ -59,7 +59,7 @@ async def create_budget_schedule(
 
     try:
         data = await make_api_request(endpoint, access_token, params, method="POST")
-        return json.dumps(data, indent=2)
+        return json.dumps(data)
     except Exception as e:
         error_msg = str(e)
         # Include details about the error and the parameters sent for easier debugging
@@ -68,4 +68,4 @@ async def create_budget_schedule(
             "details": error_msg,
             "campaign_id": campaign_id,
             "params_sent": params
-        }, indent=2) 
+        }) 

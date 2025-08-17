@@ -259,7 +259,7 @@ def meta_api_tool(func):
                                 "token_link": "[Get a new Pipeboard API token](https://pipeboard.co/api-tokens)"
                             }
                         }
-                    }, indent=2)
+                    })
                 else:
                     return json.dumps({
                         "error": {
@@ -276,7 +276,7 @@ def meta_api_tool(func):
                                 "markdown_link": f"[Click here to authenticate with Meta Ads API]({auth_url})"
                             }
                         }
-                    }, indent=2)
+                    })
                 
             # Call the original function
             result = await func(*args, **kwargs)
@@ -304,14 +304,14 @@ def meta_api_tool(func):
                                             "original_error": error_obj.get("message")
                                         }
                                     }
-                                }, indent=2)
+                                })
                 except Exception:
                     # Not JSON or other parsing error, wrap it in a dictionary
-                    return json.dumps({"data": result}, indent=2)
+                    return json.dumps({"data": result})
             
             # If result is already a dictionary, ensure it's properly serialized
             if isinstance(result, dict):
-                return json.dumps(result, indent=2)
+                return json.dumps(result)
             
             return result
         except Exception as e:
