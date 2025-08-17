@@ -94,19 +94,14 @@ async def get_insights(access_token: str = None, object_id: str = None,
         - video_p100_watched_actions: 100% video completion actions
         - video_30_sec_watched_actions: 30-second video view actions
         - video_avg_time_watched_actions: Average video watch time
-        - video_complete_watched_actions: Complete video view actions
         
         Click & Engagement Metrics:
         - outbound_clicks: Clicks to destinations off Meta platforms
         - inline_link_clicks: Clicks on links within ads
         - inline_post_engagement: Engagement with inline posts
         - social_spend: Spend on social actions
-        - unique_social_clicks: Unique clicks from social actions
         - unique_inline_link_clicks: Unique inline link clicks
         - website_ctr: Website click-through rate
-        - link_url_clicks: Clicks on URL links
-        - app_store_clicks: Clicks to app stores
-        - deeplink_clicks: Deep link clicks to apps
         
         Canvas & Instant Experience Metrics:
         - canvas_avg_view_time: Average Canvas view time
@@ -130,17 +125,6 @@ async def get_insights(access_token: str = None, object_id: str = None,
         - engagement_rate_ranking: Engagement rate ranking
         - quality_ranking: Overall quality ranking
         
-        Geographic & Demographic Data:
-        - location_type: Type of location targeting
-        - region: Geographic region
-        - country: Country location
-        - dma: Designated Market Area
-        - age: Age demographic data
-        - gender: Gender demographic data
-        
-        Time-based Analytics:
-        - hourly_stats_aggregated_by_advertiser_time_zone: Hourly stats by advertiser timezone
-        - hourly_stats_aggregated_by_audience_time_zone: Hourly stats by audience timezone
         
         Campaign Configuration:
         - attribution_setting: Attribution window settings
@@ -167,7 +151,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
         
     endpoint = f"{object_id}/insights"
     params = {
-        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,date_start,date_stop,impressions,reach,clicks,spend,ctr,cpc,cpm,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type,cost_per_conversion,cost_per_thruplay,cost_per_2_sec_continuous_video_view,cost_per_estimated_ad_recallers,cost_per_inline_link_click,cost_per_inline_post_engagement,cost_per_outbound_click,cost_per_unique_action_type,cost_per_unique_click,cost_per_unique_inline_link_click,video_play_curve_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,video_30_sec_watched_actions,video_avg_time_watched_actions,video_complete_watched_actions,outbound_clicks,inline_link_clicks,inline_post_engagement,social_spend,unique_social_clicks,unique_inline_link_clicks,website_ctr,link_url_clicks,app_store_clicks,deeplink_clicks,canvas_avg_view_time,canvas_avg_view_percent,instant_experience_clicks_to_open,instant_experience_clicks_to_start,instant_experience_outbound_clicks,mobile_app_purchase_roas,purchase_roas,website_purchase_roas,estimated_ad_recall_rate,estimated_ad_recallers,quality_score_organic,quality_score_ectr,quality_score_ecvr,location_type,region,country,dma,age,gender,hourly_stats_aggregated_by_advertiser_time_zone,hourly_stats_aggregated_by_audience_time_zone,attribution_setting,conversion_rate_ranking,engagement_rate_ranking,quality_ranking,full_view_impressions,full_view_reach,objective",
+        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,date_start,date_stop,impressions,reach,clicks,spend,ctr,cpc,cpm,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type,cost_per_conversion,cost_per_thruplay,cost_per_2_sec_continuous_video_view,cost_per_estimated_ad_recallers,cost_per_inline_link_click,cost_per_inline_post_engagement,cost_per_outbound_click,cost_per_unique_action_type,cost_per_unique_click,cost_per_unique_inline_link_click,video_play_curve_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,video_30_sec_watched_actions,video_avg_time_watched_actions,outbound_clicks,inline_link_clicks,inline_post_engagement,social_spend,unique_inline_link_clicks,website_ctr,canvas_avg_view_time,canvas_avg_view_percent,instant_experience_clicks_to_open,instant_experience_clicks_to_start,instant_experience_outbound_clicks,mobile_app_purchase_roas,purchase_roas,website_purchase_roas,estimated_ad_recall_rate,estimated_ad_recallers,quality_score_organic,quality_score_ectr,quality_score_ecvr,attribution_setting,conversion_rate_ranking,engagement_rate_ranking,quality_ranking,full_view_impressions,full_view_reach,objective",
         "level": level
     }
     
