@@ -102,7 +102,11 @@ async def get_insights(access_token: str = None, object_id: str = None,
         
         if data['data']:
             first_record = data['data'][0]
-            account_id = first_record.get('account_id')
+            raw_account_id = first_record.get('account_id')
+            if raw_account_id and not raw_account_id.startswith('act_'):
+                account_id = f"act_{raw_account_id}"
+            else:
+                account_id = raw_account_id
         
         if not account_id and object_id:
             if object_id.startswith('act_'):
