@@ -42,21 +42,21 @@ async def get_ads(access_token: str = None, account_id: str = None, limit: int =
     if adset_id:
         endpoint = f"{adset_id}/ads"
         params = {
-            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,conversion_domain,tracking_specs",
+            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,bid_amount,conversion_domain,tracking_specs",
             "limit": limit
         }
     # Use campaign-specific endpoint if campaign_id is provided
     elif campaign_id:
         endpoint = f"{campaign_id}/ads"
         params = {
-            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,conversion_domain,tracking_specs",
+            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,bid_amount,conversion_domain,tracking_specs",
             "limit": limit
         }
     else:
         # Default to account-level endpoint if no specific filters
         endpoint = f"{account_id}/ads"
         params = {
-            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,conversion_domain,tracking_specs",
+            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,bid_amount,conversion_domain,tracking_specs",
             "limit": limit
         }
 
@@ -78,7 +78,7 @@ async def get_ad_details(access_token: str = None, ad_id: str = None) -> str:
     - Basic Info: id, name, account_id, adset_id, campaign_id, status, effective_status, configured_status
     - Creative & Content: creative, preview_shareable_link
     - Timing & Schedule: ad_schedule_start_time, ad_schedule_end_time, created_time, updated_time, ad_active_time
-    - Performance & Management: last_updated_by_app_id
+    - Bidding & Performance: bid_amount, last_updated_by_app_id
     - Targeting & Tracking: tracking_specs, conversion_domain
     - Platform Relations: campaign, adset, source_ad, source_ad_id
     - Quality & Review: ad_review_feedback, issues_info, recommendations
@@ -96,7 +96,7 @@ async def get_ad_details(access_token: str = None, ad_id: str = None) -> str:
     endpoint = f"{ad_id}"
     # Include ALL available ad fields from Facebook Graph API
     params = {
-        "fields": "id,name,account_id,adset_id,campaign_id,status,effective_status,configured_status,creative,ad_schedule_start_time,ad_schedule_end_time,created_time,updated_time,conversion_domain,tracking_specs,preview_shareable_link,adlabels,ad_review_feedback,issues_info,last_updated_by_app_id,recommendations,source_ad,source_ad_id,ad_active_time,campaign,adset"
+        "fields": "id,name,account_id,adset_id,campaign_id,status,effective_status,configured_status,creative,ad_schedule_start_time,ad_schedule_end_time,created_time,updated_time,bid_amount,conversion_domain,tracking_specs,preview_shareable_link,adlabels,ad_review_feedback,issues_info,last_updated_by_app_id,recommendations,source_ad,source_ad_id,ad_active_time,campaign,adset"
     }
     
     data = await make_api_request(endpoint, access_token, params)
@@ -188,10 +188,11 @@ async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
     - Asset Management: asset_feed_spec, image_urls_for_viewing, product_data, product_set_id, destination_set_id
     - Call to Action: call_to_action, call_to_action_type
     - Platform & Placement: platform_customizations, portrait_customizations, instagram_permalink_url, instagram_user_id
+    - Branding & Sponsorship: branded_content, branded_content_sponsor_page_id, facebook_branded_content
     - Dynamic Ads: dynamic_ad_voice, bundle_folder_id, template_url, template_url_spec, categorization_criteria, category_media_source
     - Authorization & Compliance: authorization_category, effective_authorization_category, ad_disclaimer_spec
     - App & Installation: applink_treatment, enable_direct_install, enable_launch_instant_app, object_store_url, use_page_actor_override
-    - Social & Messaging: page_welcome_message, source_facebook_post_id, source_instagram_media_id, effective_instagram_media_id
+    - Social & Messaging: messenger_sponsored_message, page_welcome_message, source_facebook_post_id, source_instagram_media_id, effective_instagram_media_id
     - Metadata & Organization: adlabels, url_tags, object_id, object_type, object_url, place_page_set_id, referral_id, photo_album_source_object_story_id
 
     This provides exhaustive ad creative data for comprehensive AI analysis and decision-making.
@@ -205,7 +206,7 @@ async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
         
     endpoint = f"{ad_id}/adcreatives"
     params = {
-        "fields": "id,name,status,account_id,actor_id,ad_disclaimer_spec,adlabels,applink_treatment,authorization_category,body,bundle_folder_id,call_to_action,call_to_action_type,categorization_criteria,category_media_source,destination_set_id,destination_spec,dynamic_ad_voice,effective_authorization_category,effective_instagram_media_id,effective_object_story_id,enable_direct_install,enable_launch_instant_app,image_crops,image_hash,image_url,instagram_permalink_url,instagram_user_id,link_destination_display_url,link_og_id,link_url,object_id,object_store_url,object_story_id,object_story_spec,object_type,object_url,page_welcome_message,photo_album_source_object_story_id,place_page_set_id,platform_customizations,playable_asset_id,portrait_customizations,product_data,product_set_id,referral_id,source_facebook_post_id,source_instagram_media_id,template_url,template_url_spec,thumbnail_id,thumbnail_url,title,url_tags,use_page_actor_override,video_id,asset_feed_spec,image_urls_for_viewing"
+        "fields": "id,name,status,account_id,actor_id,ad_disclaimer_spec,adlabels,applink_treatment,authorization_category,body,branded_content,branded_content_sponsor_page_id,bundle_folder_id,call_to_action,call_to_action_type,categorization_criteria,category_media_source,destination_set_id,destination_spec,dynamic_ad_voice,effective_authorization_category,effective_instagram_media_id,effective_object_story_id,enable_direct_install,enable_launch_instant_app,facebook_branded_content,image_crops,image_hash,image_url,instagram_permalink_url,instagram_user_id,link_destination_display_url,link_og_id,link_url,messenger_sponsored_message,object_id,object_store_url,object_story_id,object_story_spec,object_type,object_url,page_welcome_message,photo_album_source_object_story_id,place_page_set_id,platform_customizations,playable_asset_id,portrait_customizations,product_data,product_set_id,referral_id,source_facebook_post_id,source_instagram_media_id,template_url,template_url_spec,thumbnail_id,thumbnail_url,title,url_tags,use_page_actor_override,video_id,asset_feed_spec,image_urls_for_viewing"
     }
     
     data = await make_api_request(endpoint, access_token, params)
@@ -1032,7 +1033,7 @@ async def _discover_pages_for_account(account_id: str, access_token: str) -> dic
         # Approach 1: Extract page IDs from tracking_specs in ads (most reliable)
         endpoint = f"{account_id}/ads"
         params = {
-            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,conversion_domain,tracking_specs",
+            "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,bid_amount,conversion_domain,tracking_specs",
             "limit": 100
         }
         

@@ -65,7 +65,7 @@ async def get_adset_details(access_token: str = None, adset_id: str = None) -> s
     - Budgets & Spend: daily_budget, lifetime_budget, budget_remaining, daily_min_spend_target, daily_spend_cap, lifetime_min_spend_target, lifetime_spend_cap
     - Timing & Schedule: start_time, end_time, created_time, updated_time, adset_schedule
     - Bidding & Optimization: bid_amount, bid_strategy, bid_adjustments, bid_constraints, bid_info, optimization_goal, optimization_sub_event
-    - Targeting & Attribution: targeting, attribution_spec, frequency_control_specs
+    - Targeting & Attribution: targeting, targeting_optimization_types, attribution_spec, frequency_control_specs
     - Creative & Content: promoted_object, destination_type, creative_sequence, is_dynamic_creative, asset_feed_id
     - Campaign Relations: campaign, campaign_active_time, campaign_attribution, source_adset, source_adset_id
     - Platform & Placement: instagram_user_id, use_new_app_click
@@ -88,7 +88,7 @@ async def get_adset_details(access_token: str = None, adset_id: str = None) -> s
     endpoint = f"{adset_id}"
     # Include ALL available ad set fields from Facebook Graph API
     params = {
-        "fields": "id,name,account_id,campaign_id,status,effective_status,configured_status,daily_budget,lifetime_budget,budget_remaining,daily_min_spend_target,daily_spend_cap,lifetime_min_spend_target,lifetime_spend_cap,start_time,end_time,created_time,updated_time,adset_schedule,bid_amount,bid_strategy,bid_adjustments,bid_constraints,bid_info,optimization_goal,optimization_sub_event,targeting,attribution_spec,frequency_control_specs{event,interval_days,max_frequency},promoted_object,destination_type,creative_sequence,is_dynamic_creative,asset_feed_id,campaign,campaign_active_time,campaign_attribution,source_adset,source_adset_id,instagram_user_id,use_new_app_click,regional_regulated_categories,regional_regulation_identities,learning_stage_info,issues_info,recommendations,review_feedback,value_rule_set_id,adlabels,pacing_type,min_budget_spend_percentage,lifetime_imps,billing_event"
+        "fields": "id,name,account_id,campaign_id,status,effective_status,configured_status,daily_budget,lifetime_budget,budget_remaining,daily_min_spend_target,daily_spend_cap,lifetime_min_spend_target,lifetime_spend_cap,start_time,end_time,created_time,updated_time,adset_schedule,bid_amount,bid_strategy,bid_adjustments,bid_constraints,bid_info,optimization_goal,optimization_sub_event,targeting,targeting_optimization_types,attribution_spec,frequency_control_specs{event,interval_days,max_frequency},promoted_object,destination_type,creative_sequence,is_dynamic_creative,asset_feed_id,campaign,campaign_active_time,campaign_attribution,source_adset,source_adset_id,instagram_user_id,use_new_app_click,regional_regulated_categories,regional_regulation_identities,learning_stage_info,issues_info,recommendations,review_feedback,value_rule_set_id,adlabels,pacing_type,min_budget_spend_percentage,lifetime_imps,billing_event"
     }
     
     data = await make_api_request(endpoint, access_token, params)

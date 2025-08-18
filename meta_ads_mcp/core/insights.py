@@ -118,6 +118,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
         Brand Awareness & Quality Metrics:
         - estimated_ad_recall_rate: Estimated ad recall rate
         - estimated_ad_recallers: Estimated number of ad recallers
+        - quality_score_organic: Organic quality score
         - quality_score_ectr: Expected click-through rate quality score
         - quality_score_ecvr: Expected conversion rate quality score
         - conversion_rate_ranking: Conversion rate ranking
@@ -150,7 +151,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
         
     endpoint = f"{object_id}/insights"
     params = {
-        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,date_start,date_stop,impressions,reach,clicks,spend,ctr,cpc,cpm,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type,cost_per_conversion,cost_per_thruplay,cost_per_2_sec_continuous_video_view,cost_per_estimated_ad_recallers,cost_per_inline_link_click,cost_per_inline_post_engagement,cost_per_outbound_click,cost_per_unique_action_type,cost_per_unique_click,cost_per_unique_inline_link_click,video_play_curve_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,video_30_sec_watched_actions,video_avg_time_watched_actions,outbound_clicks,inline_link_clicks,inline_post_engagement,social_spend,unique_inline_link_clicks,website_ctr,canvas_avg_view_time,canvas_avg_view_percent,instant_experience_clicks_to_open,instant_experience_clicks_to_start,instant_experience_outbound_clicks,mobile_app_purchase_roas,purchase_roas,website_purchase_roas,estimated_ad_recall_rate,estimated_ad_recallers,quality_score_ectr,quality_score_ecvr,attribution_setting,conversion_rate_ranking,engagement_rate_ranking,quality_ranking,full_view_impressions,full_view_reach,objective",
+        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,date_start,date_stop,impressions,reach,clicks,spend,ctr,cpc,cpm,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type,cost_per_conversion,cost_per_thruplay,cost_per_2_sec_continuous_video_view,cost_per_estimated_ad_recallers,cost_per_inline_link_click,cost_per_inline_post_engagement,cost_per_outbound_click,cost_per_unique_action_type,cost_per_unique_click,cost_per_unique_inline_link_click,video_play_curve_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,video_30_sec_watched_actions,video_avg_time_watched_actions,outbound_clicks,inline_link_clicks,inline_post_engagement,social_spend,unique_inline_link_clicks,website_ctr,canvas_avg_view_time,canvas_avg_view_percent,instant_experience_clicks_to_open,instant_experience_clicks_to_start,instant_experience_outbound_clicks,mobile_app_purchase_roas,purchase_roas,website_purchase_roas,estimated_ad_recall_rate,estimated_ad_recallers,quality_score_organic,quality_score_ectr,quality_score_ecvr,attribution_setting,conversion_rate_ranking,engagement_rate_ranking,quality_ranking,full_view_impressions,full_view_reach,objective",
         "level": level
     }
     

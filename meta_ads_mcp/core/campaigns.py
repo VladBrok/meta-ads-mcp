@@ -66,7 +66,7 @@ async def get_campaign_details(access_token: str = None, campaign_id: str = None
     view of campaign configuration, status, budgets, targeting settings, and performance attributes.
     
     KEY FIELDS RETURNED:
-    - Basic Info: id, name, objective, status, effective_status
+    - Basic Info: id, name, objective, status, effective_status, configured_status
     - Budgets & Spend: daily_budget, lifetime_budget, budget_remaining, spend_cap
     - Timing: start_time, stop_time, created_time, updated_time, last_budget_toggling_time
     - Targeting & Attribution: special_ad_categories, special_ad_category_country, primary_attribution
@@ -86,7 +86,7 @@ async def get_campaign_details(access_token: str = None, campaign_id: str = None
     
     endpoint = f"{campaign_id}"
     params = {
-        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category,special_ad_category_country,budget_remaining,account_id,adlabels,boosted_object_id,brand_lift_studies,can_create_brand_lift_study,can_use_spend_cap,effective_status,is_skadnetwork_attribution,issues_info,last_budget_toggling_time,pacing_type,primary_attribution,promoted_object,source_campaign,source_campaign_id,spend_cap"
+        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category,special_ad_category_country,budget_remaining,configured_status,account_id,adlabels,boosted_object_id,brand_lift_studies,can_create_brand_lift_study,can_use_spend_cap,effective_status,is_skadnetwork_attribution,issues_info,last_budget_toggling_time,pacing_type,primary_attribution,promoted_object,source_campaign,source_campaign_id,spend_cap"
     }
     
     data = await make_api_request(endpoint, access_token, params)
