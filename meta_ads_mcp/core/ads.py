@@ -573,7 +573,7 @@ async def upload_ad_image(
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
-        image_path: Path to the image file to upload
+        image_path: Path to the image file to upload, or URL to download from
         name: Optional name for the image (default: filename)
     
     Returns:
