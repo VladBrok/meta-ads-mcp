@@ -1,7 +1,7 @@
 """Insights and Reporting functionality for Meta Ads API."""
 
 import json
-from typing import Optional, Union, Dict
+from typing import Optional
 from .api import meta_api_tool, make_api_request
 from .utils import download_image, try_multiple_download_methods, ad_creative_images, create_resource_from_image
 from .campaigns import get_campaigns
@@ -13,7 +13,7 @@ import datetime
 @mcp_server.tool()
 @meta_api_tool
 async def get_insights(access_token: str = None, object_id: str = None, 
-                      time_range: Union[str, Dict[str, str]] = "maximum", breakdown: str = "", 
+                      date_preset: str = "last_30d", breakdown: str = "", 
                       level: str = "ad") -> str:
     """
     Get performance insights for a campaign, ad set, ad or account.
@@ -21,11 +21,10 @@ async def get_insights(access_token: str = None, object_id: str = None,
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         object_id: ID of the campaign, ad set, ad or account
-        time_range: Either a preset time range string or a dictionary with "since" and "until" dates in YYYY-MM-DD format
-                   Preset options: today, yesterday, this_month, last_month, this_quarter, maximum, data_maximum, 
-                   last_3d, last_7d, last_14d, last_28d, last_30d, last_90d, last_week_mon_sun, 
-                   last_week_sun_sat, last_quarter, last_year, this_week_mon_today, this_week_sun_today, this_year
-                   Dictionary example: {"since":"2023-01-01","until":"2023-01-31"}
+        date_preset: Preset time range string. Options: today, yesterday, this_month, last_month, this_quarter, 
+                    maximum, data_maximum, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d, 
+                    last_week_mon_sun, last_week_sun_sat, last_quarter, last_year, this_week_mon_today, 
+                    this_week_sun_today, this_year
         breakdown: Optional breakdown dimension. Valid values include:
                    Demographic: age, gender, country, region, dma
                    Platform/Device: device_platform, platform_position, publisher_platform, impression_device
@@ -56,8 +55,8 @@ async def get_insights(access_token: str = None, object_id: str = None,
         - 'aggregated_results' object with:
           - total_spend: Sum of all spend values across all results
           - total_leads: Sum of all lead actions across all results
-          - active_campaigns: Count of active campaigns in the account
-          - paused_campaigns: Count of paused campaigns in the account
+          - active_campaigns: Count of active campaigns (only included when account_id is available)
+          - paused_campaigns: Count of paused campaigns (only included when account_id is available)
     """
     if not object_id:
         return json.dumps({"error": "No object ID provided"})
@@ -68,16 +67,8 @@ async def get_insights(access_token: str = None, object_id: str = None,
         "level": level
     }
     
-    # Handle time range based on type
-    if isinstance(time_range, dict):
-        # Use custom date range with since/until parameters
-        if "since" in time_range and "until" in time_range:
-            params["time_range"] = json.dumps(time_range)
-        else:
-            return json.dumps({"error": "Custom time_range must contain both 'since' and 'until' keys in YYYY-MM-DD format"})
-    else:
-        # Use preset date range
-        params["date_preset"] = time_range
+    # Use preset date range
+    params["date_preset"] = date_preset
     
     if breakdown:
         params["breakdowns"] = breakdown
@@ -87,8 +78,6 @@ async def get_insights(access_token: str = None, object_id: str = None,
     if isinstance(data, dict) and 'data' in data and isinstance(data['data'], list) and 'error' not in data:
         total_spend = 0.0
         total_leads = 0
-        active_campaigns = 0
-        paused_campaigns = 0
         
         for record in data['data']:
             if 'spend' in record and record['spend']:
@@ -105,6 +94,13 @@ async def get_insights(access_token: str = None, object_id: str = None,
                         except (ValueError, TypeError):
                             pass
         
+        # Start building aggregated results
+        aggregated_results = {
+            'total_spend': round(total_spend, 2),
+            'total_leads': total_leads
+        }
+        
+        # Only try to get campaign counts if we can determine account_id
         account_id = None
         
         if data['data']:
@@ -120,25 +116,19 @@ async def get_insights(access_token: str = None, object_id: str = None,
                 active_campaigns_response = await get_campaigns(access_token, account_id, 1000, "ACTIVE")
                 active_campaigns_data = json.loads(active_campaigns_response)
                 if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
-                    active_campaigns = len(active_campaigns_data['data'])
+                    aggregated_results['active_campaigns'] = len(active_campaigns_data['data'])
                 
                 paused_campaigns_response = await get_campaigns(access_token, account_id, 1000, "PAUSED")
                 paused_campaigns_data = json.loads(paused_campaigns_response)
                 if 'data' in paused_campaigns_data and isinstance(paused_campaigns_data['data'], list):
-                    paused_campaigns = len(paused_campaigns_data['data'])
+                    aggregated_results['paused_campaigns'] = len(paused_campaigns_data['data'])
                     
             except Exception as e:
-                # If campaign counting fails, log it but don't break the main response
-                # Campaign counts will remain 0
-                pass
+                # If campaign counting fails, include error info but don't include the counts
+                aggregated_results['campaign_count_error'] = str(e)
         
         # Add aggregated results to the response
-        data['aggregated_results'] = {
-            'total_spend': round(total_spend, 2),
-            'total_leads': total_leads,
-            'active_campaigns': active_campaigns,
-            'paused_campaigns': paused_campaigns
-        }
+        data['aggregated_results'] = aggregated_results
     
     return json.dumps(data)
 
