@@ -55,40 +55,25 @@ async def get_adsets(access_token: str = None, account_id: str = None, limit: in
 @meta_api_tool
 async def get_adset_details(access_token: str = None, adset_id: str = None) -> str:
     """
-    Get comprehensive detailed information about a specific ad set.
-
-    This tool retrieves ALL available ad set fields from the Facebook Graph API, providing a complete
-    view of ad set configuration, status, budgets, targeting settings, optimization parameters, and performance attributes.
-    
-    KEY FIELDS RETURNED:
-    - Basic Info: id, name, account_id, campaign_id, status, effective_status, configured_status
-    - Budgets & Spend: daily_budget, lifetime_budget, budget_remaining, daily_min_spend_target, daily_spend_cap, lifetime_min_spend_target, lifetime_spend_cap
-    - Timing & Schedule: start_time, end_time, created_time, updated_time, adset_schedule, time_based_ad_rotation_intervals
-    - Bidding & Optimization: bid_amount, bid_strategy, bid_adjustments, bid_constraints, bid_info, optimization_goal, optimization_sub_event
-    - Targeting & Attribution: targeting, targeting_optimization_types, attribution_spec, frequency_control_specs
-    - Creative & Content: promoted_object, destination_type, creative_sequence, is_dynamic_creative, asset_feed_id
-    - Campaign Relations: campaign, campaign_active_time, campaign_attribution, source_adset, source_adset_id
-    - Platform & Placement: instagram_user_id, use_new_app_click, contextual_bundling_spec
-    - Compliance & Regulation: dsa_beneficiary, dsa_payor, regional_regulated_categories, regional_regulation_identities
-    - Performance & Learning: learning_stage_info, issues_info, recommendations, review_feedback
-    - Advanced Features: brand_safety_config, rf_prediction_id, multi_optimization_goal_weight, value_rule_set_id
-    - Labels & Organization: adlabels, time_based_ad_rotation_id_blocks
-    - Budget Controls: recurring_budget_semantics, pacing_type, min_budget_spend_percentage
-    - Impressions & Reach: lifetime_imps, is_incremental_attribution_enabled
-    
-    This provides comprehensive ad set data for AI decision-making and analysis.
+    Get detailed information about a specific ad set.
     
     Args:
+        adset_id: Meta Ads ad set ID (required)
         access_token: Meta API access token (optional - will use cached token if not provided)
-        adset_id: Meta Ads ad set ID
+    
+    Example:
+        To call this function through MCP, pass the adset_id as the first argument:
+        {
+            "args": "YOUR_ADSET_ID"
+        }
     """
     if not adset_id:
         return json.dumps({"error": "No ad set ID provided"})
     
     endpoint = f"{adset_id}"
-    # Include ALL available ad set fields from Facebook Graph API
+    # Explicitly prioritize frequency_control_specs in the fields request
     params = {
-        "fields": "id,name,account_id,campaign_id,status,effective_status,configured_status,daily_budget,lifetime_budget,budget_remaining,daily_min_spend_target,daily_spend_cap,lifetime_min_spend_target,lifetime_spend_cap,start_time,end_time,created_time,updated_time,adset_schedule,time_based_ad_rotation_intervals,bid_amount,bid_strategy,bid_adjustments,bid_constraints,bid_info,optimization_goal,optimization_sub_event,targeting,targeting_optimization_types,attribution_spec,frequency_control_specs{event,interval_days,max_frequency},promoted_object,destination_type,creative_sequence,is_dynamic_creative,asset_feed_id,campaign,campaign_active_time,campaign_attribution,source_adset,source_adset_id,instagram_user_id,use_new_app_click,contextual_bundling_spec,dsa_beneficiary,dsa_payor,regional_regulated_categories,regional_regulation_identities,learning_stage_info,issues_info,recommendations,review_feedback,brand_safety_config,rf_prediction_id,multi_optimization_goal_weight,value_rule_set_id,adlabels,time_based_ad_rotation_id_blocks,recurring_budget_semantics,pacing_type,min_budget_spend_percentage,lifetime_imps,is_incremental_attribution_enabled,billing_event"
+        "fields": "id,name,campaign_id,status,frequency_control_specs{event,interval_days,max_frequency},daily_budget,lifetime_budget,targeting,bid_amount,bid_strategy,optimization_goal,billing_event,start_time,end_time,created_time,updated_time,attribution_spec,destination_type,promoted_object,pacing_type,budget_remaining,dsa_beneficiary"
     }
     
     data = await make_api_request(endpoint, access_token, params)

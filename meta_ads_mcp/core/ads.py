@@ -69,22 +69,7 @@ async def get_ads(access_token: str = None, account_id: str = None, limit: int =
 @meta_api_tool
 async def get_ad_details(access_token: str = None, ad_id: str = None) -> str:
     """
-    Get comprehensive detailed information about a specific ad.
-
-    This tool retrieves ALL available ad fields from the Facebook Graph API, providing a complete
-    view of ad configuration, status, creative content, targeting settings, and performance attributes.
-    
-    KEY FIELDS RETURNED:
-    - Basic Info: id, name, account_id, adset_id, campaign_id, status, effective_status, configured_status
-    - Creative & Content: creative, preview_shareable_link
-    - Timing & Schedule: ad_schedule_start_time, ad_schedule_end_time, created_time, updated_time, ad_active_time
-    - Bidding & Performance: bid_amount, last_updated_by_app_id
-    - Targeting & Audience: audience_id, engagement_audience, tracking_specs, conversion_domain
-    - Platform Relations: campaign, adset, source_ad, source_ad_id
-    - Quality & Review: ad_review_feedback, issues_info, recommendations
-    - Labels & Organization: adlabels
-    
-    This provides comprehensive ad data for AI decision-making and analysis.
+    Get detailed information about a specific ad.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
@@ -94,9 +79,8 @@ async def get_ad_details(access_token: str = None, ad_id: str = None) -> str:
         return json.dumps({"error": "No ad ID provided"})
         
     endpoint = f"{ad_id}"
-    # Include ALL available ad fields from Facebook Graph API
     params = {
-        "fields": "id,name,account_id,adset_id,campaign_id,status,effective_status,configured_status,creative,ad_schedule_start_time,ad_schedule_end_time,created_time,updated_time,bid_amount,conversion_domain,tracking_specs,preview_shareable_link,adlabels,ad_review_feedback,audience_id,engagement_audience,issues_info,last_updated_by_app_id,recommendations,source_ad,source_ad_id,ad_active_time,campaign,adset"
+        "fields": "id,name,adset_id,campaign_id,status,creative,created_time,updated_time,bid_amount,conversion_domain,tracking_specs,preview_shareable_link"
     }
     
     data = await make_api_request(endpoint, access_token, params)
@@ -176,27 +160,7 @@ async def create_ad(
 @meta_api_tool
 async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
     """
-    Get comprehensive detailed information about ad creatives for a specific ad.
-
-    This tool retrieves ALL available ad creative fields from the Facebook Graph API, providing complete
-    information about creative content, configuration, assets, targeting, branding, and technical specifications.
-    
-    KEY FIELDS RETURNED:
-    - Basic Info: id, name, status, account_id, actor_id, thumbnail_url, thumbnail_id
-    - Creative Content: body, title, image_hash, image_url, image_crops, video_id, playable_asset_id
-    - Story & Link Data: object_story_spec, object_story_id, effective_object_story_id, link_url, link_og_id, link_destination_display_url
-    - Asset Management: asset_feed_spec, image_urls_for_viewing, product_data, product_set_id, destination_set_id
-    - Call to Action: call_to_action, call_to_action_type
-    - Platform & Placement: platform_customizations, portrait_customizations, instagram_permalink_url, instagram_user_id, threads_user_id
-    - Branding & Sponsorship: branded_content, branded_content_sponsor_page_id, facebook_branded_content
-    - Dynamic Ads: dynamic_ad_voice, degrees_of_freedom_spec, bundle_folder_id, template_url, template_url_spec, categorization_criteria, category_media_source
-    - Authorization & Compliance: authorization_category, effective_authorization_category, ad_disclaimer_spec, regional_regulation_disclaimer_spec
-    - App & Installation: applink_treatment, enable_direct_install, enable_launch_instant_app, object_store_url, use_page_actor_override
-    - Advanced Features: interactive_components_spec, contextual_multi_ads, creative_sourcing_spec, recommender_settings, collaborative_ads_lsb_image_bank_id
-    - Social & Messaging: messenger_sponsored_message, page_welcome_message, source_facebook_post_id, source_instagram_media_id, effective_instagram_media_id
-    - Metadata & Organization: adlabels, url_tags, object_id, object_type, object_url, place_page_set_id, referral_id, photo_album_source_object_story_id
-
-    This provides exhaustive ad creative data for comprehensive AI analysis and decision-making.
+    Get creative details for a specific ad. Best if combined with get_ad_image to get the full image.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
@@ -207,7 +171,7 @@ async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
         
     endpoint = f"{ad_id}/adcreatives"
     params = {
-        "fields": "id,name,status,account_id,actor_id,ad_disclaimer_spec,adlabels,applink_treatment,authorization_category,body,branded_content,branded_content_sponsor_page_id,bundle_folder_id,call_to_action,call_to_action_type,categorization_criteria,category_media_source,collaborative_ads_lsb_image_bank_id,contextual_multi_ads,creative_sourcing_spec,degrees_of_freedom_spec,destination_set_id,destination_spec,dynamic_ad_voice,effective_authorization_category,effective_instagram_media_id,effective_object_story_id,enable_direct_install,enable_launch_instant_app,facebook_branded_content,image_crops,image_hash,image_url,instagram_permalink_url,instagram_user_id,interactive_components_spec,link_destination_display_url,link_og_id,link_url,messenger_sponsored_message,object_id,object_store_url,object_story_id,object_story_spec,object_type,object_url,page_welcome_message,photo_album_source_object_story_id,place_page_set_id,platform_customizations,playable_asset_id,portrait_customizations,product_data,product_set_id,recommender_settings,referral_id,regional_regulation_disclaimer_spec,source_facebook_post_id,source_instagram_media_id,template_url,template_url_spec,threads_user_id,thumbnail_id,thumbnail_url,title,url_tags,use_page_actor_override,video_id,asset_feed_spec,image_urls_for_viewing"
+        "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,asset_feed_spec,image_urls_for_viewing"
     }
     
     data = await make_api_request(endpoint, access_token, params)
