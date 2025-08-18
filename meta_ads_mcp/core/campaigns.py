@@ -70,10 +70,11 @@ async def get_campaign_details(access_token: str = None, campaign_id: str = None
     - Budgets & Spend: daily_budget, lifetime_budget, budget_remaining, spend_cap
     - Timing: start_time, stop_time, created_time, updated_time, last_budget_toggling_time
     - Targeting & Attribution: special_ad_categories, special_ad_category_country, primary_attribution
-    - Optimization: bid_strategy, buying_type, pacing_type
+    - Optimization: bid_strategy, buying_type, pacing_type, campaign_group_active_time
     - Advanced Features: is_skadnetwork_attribution, brand_lift_studies, promoted_object
     - Relationships: source_campaign, source_campaign_id, account_id, adlabels
     - Capabilities: can_create_brand_lift_study, can_use_spend_cap, issues_info
+    - Settings: smart_promotion_type, budget_rebalance_flag, is_budget_schedule_enabled
     
     This provides comprehensive campaign data for AI decision-making and analysis.
     
@@ -86,7 +87,7 @@ async def get_campaign_details(access_token: str = None, campaign_id: str = None
     
     endpoint = f"{campaign_id}"
     params = {
-        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category,special_ad_category_country,budget_remaining,configured_status,account_id,adlabels,boosted_object_id,brand_lift_studies,can_create_brand_lift_study,can_use_spend_cap,effective_status,is_skadnetwork_attribution,issues_info,last_budget_toggling_time,pacing_type,primary_attribution,promoted_object,source_campaign,source_campaign_id,spend_cap"
+        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category,special_ad_category_country,budget_remaining,configured_status,account_id,adlabels,boosted_object_id,brand_lift_studies,budget_rebalance_flag,campaign_group_active_time,can_create_brand_lift_study,can_use_spend_cap,effective_status,has_secondary_skadnetwork_reporting,is_adset_budget_sharing_enabled,is_budget_schedule_enabled,is_skadnetwork_attribution,issues_info,last_budget_toggling_time,pacing_type,primary_attribution,promoted_object,smart_promotion_type,source_campaign,source_campaign_id,spend_cap,topline_id"
     }
     
     data = await make_api_request(endpoint, access_token, params)
