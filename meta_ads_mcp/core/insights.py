@@ -67,7 +67,6 @@ async def get_insights(access_token: str = None, object_id: str = None,
         "level": level
     }
     
-    # Use preset date range
     params["date_preset"] = date_preset
     
     if breakdown:
@@ -94,13 +93,11 @@ async def get_insights(access_token: str = None, object_id: str = None,
                         except (ValueError, TypeError):
                             pass
         
-        # Start building aggregated results
         aggregated_results = {
             'total_spend': round(total_spend, 2),
             'total_leads': total_leads
         }
         
-        # Only try to get campaign counts if we can determine account_id
         account_id = None
         
         if data['data']:
@@ -113,20 +110,18 @@ async def get_insights(access_token: str = None, object_id: str = None,
             
         if account_id:
             try:
-                # get_campaigns() should always return a JSON string, so we parse it normally
-                active_campaigns_response = await get_campaigns(access_token, account_id, 1000, "ACTIVE")
+                active_campaigns_response = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="ACTIVE")
                 active_campaigns_data = json.loads(active_campaigns_response)
                 if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
                     aggregated_results['active_campaigns'] = len(active_campaigns_data['data'])
                 
-                paused_campaigns_response = await get_campaigns(access_token, account_id, 1000, "PAUSED")
+                paused_campaigns_response = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="PAUSED")
                 paused_campaigns_data = json.loads(paused_campaigns_response)
                 if 'data' in paused_campaigns_data and isinstance(paused_campaigns_data['data'], list):
                     aggregated_results['paused_campaigns'] = len(paused_campaigns_data['data'])
                     
             except Exception as e:
                 import traceback
-                # Provide detailed error information for debugging
                 error_details = {
                     'error_type': type(e).__name__,
                     'error_message': str(e),
@@ -134,7 +129,6 @@ async def get_insights(access_token: str = None, object_id: str = None,
                     'traceback': traceback.format_exc()
                 }
                 
-                # Inspect the actual responses to understand why parsing failed
                 if 'active_campaigns_response' in locals():
                     error_details['active_response_type'] = type(active_campaigns_response).__name__
                     error_details['active_response_sample'] = str(active_campaigns_response)[:300] + ('...' if len(str(active_campaigns_response)) > 300 else '')
@@ -147,15 +141,8 @@ async def get_insights(access_token: str = None, object_id: str = None,
                 else:
                     error_details['paused_response_type'] = 'not_fetched'
                 
-                # Specific diagnosis for the type mismatch issue
-                if 'active_campaigns_response' in locals() and not isinstance(active_campaigns_response, str):
-                    error_details['diagnosis'] = f"BUG: get_campaigns() returned {type(active_campaigns_response).__name__} instead of str - check for early returns or exceptions in get_campaigns()"
-                elif 'paused_campaigns_response' in locals() and not isinstance(paused_campaigns_response, str):
-                    error_details['diagnosis'] = f"BUG: get_campaigns() returned {type(paused_campaigns_response).__name__} instead of str - check for early returns or exceptions in get_campaigns()"
-                
                 aggregated_results['campaign_count_error'] = error_details
         
-        # Add aggregated results to the response
         data['aggregated_results'] = aggregated_results
     
     return json.dumps(data)
