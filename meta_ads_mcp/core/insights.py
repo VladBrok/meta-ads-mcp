@@ -113,6 +113,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
             
         if account_id:
             try:
+                # get_campaigns() should always return a JSON string, so we parse it normally
                 active_campaigns_response = await get_campaigns(access_token, account_id, 1000, "ACTIVE")
                 active_campaigns_data = json.loads(active_campaigns_response)
                 if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
@@ -124,8 +125,35 @@ async def get_insights(access_token: str = None, object_id: str = None,
                     aggregated_results['paused_campaigns'] = len(paused_campaigns_data['data'])
                     
             except Exception as e:
-                # If campaign counting fails, include error info but don't include the counts
-                aggregated_results['campaign_count_error'] = str(e)
+                import traceback
+                # Provide detailed error information for debugging
+                error_details = {
+                    'error_type': type(e).__name__,
+                    'error_message': str(e),
+                    'account_id': account_id,
+                    'traceback': traceback.format_exc()
+                }
+                
+                # Inspect the actual responses to understand why parsing failed
+                if 'active_campaigns_response' in locals():
+                    error_details['active_response_type'] = type(active_campaigns_response).__name__
+                    error_details['active_response_sample'] = str(active_campaigns_response)[:300] + ('...' if len(str(active_campaigns_response)) > 300 else '')
+                else:
+                    error_details['active_response_type'] = 'not_fetched'
+                
+                if 'paused_campaigns_response' in locals():
+                    error_details['paused_response_type'] = type(paused_campaigns_response).__name__  
+                    error_details['paused_response_sample'] = str(paused_campaigns_response)[:300] + ('...' if len(str(paused_campaigns_response)) > 300 else '')
+                else:
+                    error_details['paused_response_type'] = 'not_fetched'
+                
+                # Specific diagnosis for the type mismatch issue
+                if 'active_campaigns_response' in locals() and not isinstance(active_campaigns_response, str):
+                    error_details['diagnosis'] = f"BUG: get_campaigns() returned {type(active_campaigns_response).__name__} instead of str - check for early returns or exceptions in get_campaigns()"
+                elif 'paused_campaigns_response' in locals() and not isinstance(paused_campaigns_response, str):
+                    error_details['diagnosis'] = f"BUG: get_campaigns() returned {type(paused_campaigns_response).__name__} instead of str - check for early returns or exceptions in get_campaigns()"
+                
+                aggregated_results['campaign_count_error'] = error_details
         
         # Add aggregated results to the response
         data['aggregated_results'] = aggregated_results
