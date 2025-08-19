@@ -1,7 +1,7 @@
 """Insights and Reporting functionality for Meta Ads API."""
 
 import json
-from typing import Optional
+from typing import Optional, List
 from .api import meta_api_tool, make_api_request
 from .utils import download_image, try_multiple_download_methods, ad_creative_images, create_resource_from_image
 from .campaigns import get_campaigns
@@ -14,7 +14,8 @@ import datetime
 @meta_api_tool
 async def get_insights(access_token: str = None, object_id: str = None, 
                       date_preset: str = "last_30d", breakdown: str = "", 
-                      level: str = "ad") -> str:
+                      level: str = "ad", limit: int = 10, after: str = "",
+                      campaign_ids: Optional[List[str]] = None) -> str:
     """
     Get performance insights for a campaign, ad set, ad or account.
     
@@ -49,14 +50,11 @@ async def get_insights(access_token: str = None, object_id: str = None,
                             marketing_messages_btn_name, impression_view_time_advertiser_hour_v2, comscore_market,
                             comscore_market_code
         level: Level of aggregation (ad, adset, campaign, account)
+        limit: Maximum number of results to return (default: 10)
+        after: Pagination cursor to get the next set of results
+        campaign_ids: internal field, do not use
     Returns:
-        JSON response containing insights data with aggregated results:
-        - Original insights data in 'data' array
-        - 'aggregated_results' object with:
-          - total_spend: Sum of all spend values across all results
-          - total_leads: Sum of all lead actions across all results
-          - active_campaigns: Count of active campaigns (only included when account_id is available)
-          - paused_campaigns: Count of paused campaigns (only included when account_id is available)
+        JSON response containing insights data
     """
     if not object_id:
         return json.dumps({"error": "No object ID provided"})
@@ -64,13 +62,92 @@ async def get_insights(access_token: str = None, object_id: str = None,
     endpoint = f"{object_id}/insights"
     params = {
         "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,cpc,cpm,ctr,reach,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type",
-        "level": level
+        "level": level,
+        "limit": limit
     }
     
     params["date_preset"] = date_preset
     
     if breakdown:
         params["breakdowns"] = breakdown
+    
+    if campaign_ids:
+        filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
+        params["filtering"] = json.dumps(filtering)
+    
+    if after:
+        params["after"] = after
+    
+    data = await make_api_request(endpoint, access_token, params)
+    
+    return json.dumps(data)
+
+
+@mcp_server.tool()
+@meta_api_tool
+async def get_insights_summary(access_token: str = None, object_id: str = None, 
+                              date_preset: str = "last_30d", breakdown: str = "", 
+                              level: str = "ad", campaign_ids: Optional[List[str]] = None) -> str:
+    """
+    Get aggregated performance summary for a campaign, ad set, ad or account.
+    
+    Args:
+        access_token: Meta API access token (optional - will use cached token if not provided)
+        object_id: ID of the campaign, ad set, ad or account
+        date_preset: Preset time range string. Options: today, yesterday, this_month, last_month, this_quarter, 
+                    maximum, data_maximum, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d, 
+                    last_week_mon_sun, last_week_sun_sat, last_quarter, last_year, this_week_mon_today, 
+                    this_week_sun_today, this_year
+        breakdown: Optional breakdown dimension. Valid values include:
+                   Demographic: age, gender, country, region, dma
+                   Platform/Device: device_platform, platform_position, publisher_platform, impression_device
+                   Creative Assets: ad_format_asset, body_asset, call_to_action_asset, description_asset, 
+                                  image_asset, link_url_asset, title_asset, video_asset, media_asset_url,
+                                  media_creator, media_destination_url, media_format, media_origin_url,
+                                  media_text_content, media_type, creative_relaxation_asset_type,
+                                  flexible_format_asset_type, gen_ai_asset_type
+                   Campaign/Ad Attributes: breakdown_ad_objective, breakdown_reporting_ad_id, app_id, product_id
+                   Conversion Tracking: coarse_conversion_value, conversion_destination, standard_event_content_type,
+                                       signal_source_bucket, is_conversion_id_modeled, fidelity_type, redownload
+                   Time-based: hourly_stats_aggregated_by_advertiser_time_zone, 
+                              hourly_stats_aggregated_by_audience_time_zone, frequency_value
+                   Extensions/Landing: ad_extension_domain, ad_extension_url, landing_destination, 
+                                      mdsa_landing_destination
+                   Attribution: sot_attribution_model_type, sot_attribution_window, sot_channel, 
+                               sot_event_type, sot_source
+                   Mobile/SKAN: skan_campaign_id, skan_conversion_id, skan_version, postback_sequence_index
+                   CRM/Business: crm_advertiser_l12_territory_ids, crm_advertiser_subvertical_id,
+                                crm_advertiser_vertical_id, crm_ult_advertiser_id, user_persona_id, user_persona_name
+                   Advanced: hsid, is_auto_advance, is_rendered_as_delayed_skip_ad, mmm, place_page_id,
+                            marketing_messages_btn_name, impression_view_time_advertiser_hour_v2, comscore_market,
+                            comscore_market_code
+        level: Level of aggregation (ad, adset, campaign, account)
+        campaign_ids: internal field, do not use
+    Returns:
+        JSON response containing aggregated summary with:
+        - total_spend: Sum of all spend values across all results
+        - total_leads: Sum of all lead actions across all results  
+        - active_campaigns: Count of active campaigns (filtered by campaign_ids if provided)
+        - paused_campaigns: Count of paused campaigns (filtered by campaign_ids if provided)
+    """
+    if not object_id:
+        return json.dumps({"error": "No object ID provided"})
+        
+    endpoint = f"{object_id}/insights"
+    params = {
+        "fields": "account_id,spend,actions",
+        "level": level,
+        "limit": 1000  # Get all data for aggregation, no pagination
+    }
+    
+    params["date_preset"] = date_preset
+    
+    if breakdown:
+        params["breakdowns"] = breakdown
+    
+    if campaign_ids:
+        filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
+        params["filtering"] = json.dumps(filtering)
     
     data = await make_api_request(endpoint, access_token, params)
     
@@ -114,16 +191,38 @@ async def get_insights(access_token: str = None, object_id: str = None,
             
         if account_id:
             try:
-                active_campaigns_response = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="ACTIVE")
-                active_campaigns_data = json.loads(active_campaigns_response)
-                if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
-                    aggregated_results['active_campaigns'] = len(active_campaigns_data['data'])
+                # Get all campaigns first
+                all_campaigns_active = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="ACTIVE")
+                all_campaigns_paused = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="PAUSED")
                 
-                paused_campaigns_response = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="PAUSED")
-                paused_campaigns_data = json.loads(paused_campaigns_response)
-                if 'data' in paused_campaigns_data and isinstance(paused_campaigns_data['data'], list):
-                    aggregated_results['paused_campaigns'] = len(paused_campaigns_data['data'])
+                active_campaigns_data = json.loads(all_campaigns_active)
+                paused_campaigns_data = json.loads(all_campaigns_paused)
+                
+                # Filter by campaign_ids if provided
+                if campaign_ids:
+                    active_count = 0
+                    paused_count = 0
                     
+                    if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
+                        for campaign in active_campaigns_data['data']:
+                            if campaign.get('id') in campaign_ids:
+                                active_count += 1
+                    
+                    if 'data' in paused_campaigns_data and isinstance(paused_campaigns_data['data'], list):
+                        for campaign in paused_campaigns_data['data']:
+                            if campaign.get('id') in campaign_ids:
+                                paused_count += 1
+                    
+                    aggregated_results['active_campaigns'] = active_count
+                    aggregated_results['paused_campaigns'] = paused_count
+                else:
+                    # No filtering, return all campaigns
+                    if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
+                        aggregated_results['active_campaigns'] = len(active_campaigns_data['data'])
+                    
+                    if 'data' in paused_campaigns_data and isinstance(paused_campaigns_data['data'], list):
+                        aggregated_results['paused_campaigns'] = len(paused_campaigns_data['data'])
+                        
             except Exception as e:
                 import traceback
                 error_details = {
@@ -132,24 +231,15 @@ async def get_insights(access_token: str = None, object_id: str = None,
                     'account_id': account_id,
                     'traceback': traceback.format_exc()
                 }
-                
-                if 'active_campaigns_response' in locals():
-                    error_details['active_response_type'] = type(active_campaigns_response).__name__
-                    error_details['active_response_sample'] = str(active_campaigns_response)[:300] + ('...' if len(str(active_campaigns_response)) > 300 else '')
-                else:
-                    error_details['active_response_type'] = 'not_fetched'
-                
-                if 'paused_campaigns_response' in locals():
-                    error_details['paused_response_type'] = type(paused_campaigns_response).__name__  
-                    error_details['paused_response_sample'] = str(paused_campaigns_response)[:300] + ('...' if len(str(paused_campaigns_response)) > 300 else '')
-                else:
-                    error_details['paused_response_type'] = 'not_fetched'
-                
                 aggregated_results['campaign_count_error'] = error_details
         
-        data['aggregated_results'] = aggregated_results
-    
-    return json.dumps(data)
+        return json.dumps(aggregated_results)
+    else:
+        # Return error or empty result
+        if isinstance(data, dict) and 'error' in data:
+            return json.dumps(data)
+        else:
+            return json.dumps({"error": "No valid data received", "raw_response": data})
 
 
 

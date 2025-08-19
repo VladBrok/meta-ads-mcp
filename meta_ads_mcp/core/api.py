@@ -37,6 +37,17 @@ class GraphAPIError(Exception):
             auth_manager.invalidate_token()
 
 
+def filter_paging_next(response_data: Dict[str, Any]) -> Dict[str, Any]:
+    if isinstance(response_data, dict) and "paging" in response_data:
+        if isinstance(response_data["paging"], dict):
+            if "next" in response_data["paging"]:
+                del response_data["paging"]["next"]
+            if "previous" in response_data["paging"]:
+                del response_data["paging"]["previous"]
+    
+    return response_data
+
+
 async def make_api_request(
     endpoint: str,
     access_token: str,
@@ -70,19 +81,15 @@ async def make_api_request(
     
     headers = {
         "User-Agent": USER_AGENT,
+        "Authorization": f"Bearer {access_token}"
     }
     
     request_params = params or {}
-    request_params["access_token"] = access_token
     
     # Logging the request (masking token for security)
-    masked_params = {k: "***TOKEN***" if k == "access_token" else v for k, v in request_params.items()}
-    logger.debug(f"API Request: {method} {url}")
-    logger.debug(f"Request params: {masked_params}")
     
     # Check for app_id in params
     app_id = auth_manager.app_id
-    logger.debug(f"Current app_id from auth_manager: {app_id}")
     
     async with httpx.AsyncClient() as client:
         try:
@@ -99,7 +106,6 @@ async def make_api_request(
                     if isinstance(value, (list, dict)):
                         request_params[key] = json.dumps(value)
                 
-                logger.debug(f"POST params (prepared): {masked_params}")
                 response = await client.post(url, data=request_params, headers=headers, timeout=30.0)
             elif method == "DELETE":
                 response = await client.delete(url, params=request_params, headers=headers, timeout=30.0)
@@ -111,7 +117,8 @@ async def make_api_request(
             
             # Ensure the response is JSON and return it as a dictionary
             try:
-                return response.json()
+                response_data = response.json()
+                return filter_paging_next(response_data)
             except json.JSONDecodeError:
                 # If not JSON, return text content in a structured format
                 return {
@@ -182,16 +189,11 @@ def meta_api_tool(func):
     async def wrapper(*args, **kwargs):
         try:
             # Log function call
-            logger.debug(f"Function call: {func.__name__}")
-            logger.debug(f"Args: {args}")
             # Log kwargs without sensitive info
             safe_kwargs = {k: ('***TOKEN***' if k == 'access_token' else v) for k, v in kwargs.items()}
-            logger.debug(f"Kwargs: {safe_kwargs}")
             
             # Log app ID information
             app_id = auth_manager.app_id
-            logger.debug(f"Current app_id: {app_id}")
-            logger.debug(f"META_APP_ID env var: {os.environ.get('META_APP_ID')}")
             
             # If access_token is not in kwargs or not kwargs['access_token'], try to get it from auth_manager
             if 'access_token' not in kwargs or not kwargs['access_token']:
@@ -316,6 +318,6 @@ def meta_api_tool(func):
             return result
         except Exception as e:
             logger.error(f"Error in {func.__name__}: {str(e)}")
-            return {"error": str(e)}
+            return json.dumps({"error": str(e)})
     
     return wrapper 

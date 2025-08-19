@@ -9,7 +9,7 @@ from .server import mcp_server
 
 @mcp_server.tool()
 @meta_api_tool
-async def get_campaigns(access_token: str = None, account_id: str = None, limit: int = 10, status_filter: str = "", after: str = "") -> str:
+async def get_campaigns(access_token: str = None, account_id: str = None, limit: int = 10, status_filter: str = "", after: str = "", campaign_ids: Optional[List[str]] = None) -> str:
     """
     Get campaigns for a Meta Ads account with optional filtering.
     
@@ -27,6 +27,7 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
                        Maps to the 'effective_status' API parameter, which expects an array
                        (this function handles the required JSON formatting). Leave empty for all statuses.
         after: Pagination cursor to get the next set of results
+        campaign_ids: internal field, do not use
     """
     # If no account ID is specified, try to get the first one for the user
     if not account_id:
@@ -50,6 +51,10 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
     
     if after:
         params["after"] = after
+    
+    if campaign_ids:
+        filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
+        params["filtering"] = json.dumps(filtering)
     
     data = await make_api_request(endpoint, access_token, params)
     

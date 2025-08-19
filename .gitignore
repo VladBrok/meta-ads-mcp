@@ -33,3 +33,4 @@ internal/
 uv.lock
 test.sh
 *local*
+local
