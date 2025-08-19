@@ -71,7 +71,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
     if breakdown:
         params["breakdowns"] = breakdown
     
-    if campaign_ids:
+    if campaign_ids is not None:
         filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
         params["filtering"] = json.dumps(filtering)
     
@@ -145,7 +145,7 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
     if breakdown:
         params["breakdowns"] = breakdown
     
-    if campaign_ids:
+    if campaign_ids is not None:
         filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
         params["filtering"] = json.dumps(filtering)
     
@@ -199,7 +199,7 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
                 paused_campaigns_data = json.loads(all_campaigns_paused)
                 
                 # Filter by campaign_ids if provided
-                if campaign_ids:
+                if campaign_ids is not None:
                     active_count = 0
                     paused_count = 0
                     

@@ -52,7 +52,7 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
     if after:
         params["after"] = after
     
-    if campaign_ids:
+    if campaign_ids is not None:
         filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
         params["filtering"] = json.dumps(filtering)
     
