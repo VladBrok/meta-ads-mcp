@@ -301,6 +301,9 @@ async def update_campaign(
         # Use POST method for updates as per Meta API documentation
         data = await make_api_request(endpoint, access_token, params, method="POST")
         
+        # Ensure campaign_id is included in the response
+        data["campaign_id"] = campaign_id
+        
         # Add a note about budget strategy if switching to ad set level budgets
         if use_adset_level_budgets is not None and use_adset_level_budgets:
             data["budget_strategy"] = "ad_set_level"
