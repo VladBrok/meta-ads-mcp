@@ -1214,3 +1214,40 @@ async def get_account_pages(access_token: str = None, account_id: str = None) ->
             "error": "Failed to get account pages",
             "details": str(e)
         })
+
+
+@mcp_server.tool()
+@meta_api_tool
+async def get_account_pixels(access_token: str = None, account_id: str = None) -> str:
+    """
+    Get Meta pixels associated with an ads account.
+    
+    Args:
+        access_token: Meta API access token (optional - will use cached token if not provided)
+        account_id: Meta Ads account ID (format: act_XXXXXXXXX)
+    
+    Returns:
+        JSON response with pixels associated with the account
+    """
+    if not account_id:
+        return json.dumps({"error": "No account ID provided"})
+    
+    # Ensure account_id has the 'act_' prefix
+    if not account_id.startswith("act_"):
+        account_id = f"act_{account_id}"
+    
+    try:
+        endpoint = f"{account_id}/adspixels"
+        params = {
+            "fields": "id,name,last_fired_time"
+        }
+        
+        data = await make_api_request(endpoint, access_token, params)
+        
+        return json.dumps(data)
+        
+    except Exception as e:
+        return json.dumps({
+            "error": "Failed to get account pixels",
+            "details": str(e)
+        })

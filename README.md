@@ -129,7 +129,14 @@ For local installation configuration, authentication options, and advanced techn
      - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX) or "me" for the current user's pages
    - Returns: List of pages associated with the account, useful for ad creation and management
 
-4. `mcp_meta_ads_get_campaigns`
+4. `mcp_meta_ads_get_account_pixels`
+   - Get Meta pixels associated with an ads account
+   - Inputs:
+     - `access_token` (optional): Meta API access token (will use cached token if not provided)
+     - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX)
+   - Returns: List of pixels associated with the account, useful for tracking conversions and events
+
+5. `mcp_meta_ads_get_campaigns`
    - Get campaigns for a Meta Ads account with optional filtering
    - Inputs:
      - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -138,14 +145,14 @@ For local installation configuration, authentication options, and advanced techn
      - `status_filter`: Filter by status (empty for all, or 'ACTIVE', 'PAUSED', etc.)
    - Returns: List of campaigns matching the criteria
 
-5. `mcp_meta_ads_get_campaign_details`
+6. `mcp_meta_ads_get_campaign_details`
    - Get detailed information about a specific campaign
    - Inputs:
      - `access_token` (optional): Meta API access token (will use cached token if not provided)
      - `campaign_id`: Meta Ads campaign ID
    - Returns: Detailed information about the specified campaign
 
-6. `mcp_meta_ads_create_campaign`
+7. `mcp_meta_ads_create_campaign`
    - Create a new campaign in a Meta Ads account
    - Inputs:
      - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -158,7 +165,7 @@ For local installation configuration, authentication options, and advanced techn
      - `lifetime_budget`: Lifetime budget in account currency (in cents)
    - Returns: Confirmation with new campaign details
 
-7. `mcp_meta_ads_get_adsets`
+8. `mcp_meta_ads_get_adsets`
    - Get ad sets for a Meta Ads account with optional filtering by campaign
    - Inputs:
      - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -167,14 +174,14 @@ For local installation configuration, authentication options, and advanced techn
      - `campaign_id`: Optional campaign ID to filter by
    - Returns: List of ad sets matching the criteria
 
-8. `mcp_meta_ads_get_adset_details`
+9. `mcp_meta_ads_get_adset_details`
    - Get detailed information about a specific ad set
    - Inputs:
      - `access_token` (optional): Meta API access token (will use cached token if not provided)
      - `adset_id`: Meta Ads ad set ID
    - Returns: Detailed information about the specified ad set
 
-9. `mcp_meta_ads_create_adset`
+10. `mcp_meta_ads_create_adset`
    - Create a new ad set in a Meta Ads account
    - Inputs:
      - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX)
@@ -192,7 +199,7 @@ For local installation configuration, authentication options, and advanced techn
      - `access_token` (optional): Meta API access token
    - Returns: Confirmation with new ad set details
 
-10. `mcp_meta_ads_get_ads`
+11. `mcp_meta_ads_get_ads`
     - Get ads for a Meta Ads account with optional filtering
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -202,7 +209,7 @@ For local installation configuration, authentication options, and advanced techn
       - `adset_id`: Optional ad set ID to filter by
     - Returns: List of ads matching the criteria
 
-11. `mcp_meta_ads_create_ad`
+12. `mcp_meta_ads_create_ad`
     - Create a new ad with an existing creative
     - Inputs:
       - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX)
@@ -215,21 +222,21 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token
     - Returns: Confirmation with new ad details
 
-12. `mcp_meta_ads_get_ad_details`
+13. `mcp_meta_ads_get_ad_details`
     - Get detailed information about a specific ad
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
       - `ad_id`: Meta Ads ad ID
     - Returns: Detailed information about the specified ad
 
-13. `mcp_meta_ads_get_ad_creatives`
+14. `mcp_meta_ads_get_ad_creatives`
     - Get creative details for a specific ad
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
       - `ad_id`: Meta Ads ad ID
     - Returns: Creative details including text, images, and URLs
 
-14. `mcp_meta_ads_create_ad_creative`
+15. `mcp_meta_ads_create_ad_creative`
     - Create a new ad creative using an uploaded image hash
     - Inputs:
       - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX)
@@ -248,7 +255,7 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token
     - Returns: Confirmation with new creative details
 
-15. `mcp_meta_ads_update_ad_creative`
+16. `mcp_meta_ads_update_ad_creative`
     - Update an existing ad creative with new content or settings
     - Inputs:
       - `creative_id`: Meta Ads creative ID to update
@@ -263,7 +270,7 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
     - Returns: Confirmation with updated creative details
 
-16. `mcp_meta_ads_upload_ad_image`
+17. `mcp_meta_ads_upload_ad_image`
     - Upload an image to use in Meta Ads creatives
     - Inputs:
       - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX)
@@ -272,14 +279,14 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token
     - Returns: JSON response with image details including hash
 
-17. `mcp_meta_ads_get_ad_image`
+18. `mcp_meta_ads_get_ad_image`
     - Get, download, and visualize a Meta ad image in one step
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
       - `ad_id`: Meta Ads ad ID
     - Returns: The ad image ready for direct visual analysis
 
-18. `mcp_meta_ads_update_ad`
+19. `mcp_meta_ads_update_ad`
     - Update an ad with new settings
     - Inputs:
       - `ad_id`: Meta Ads ad ID
@@ -288,7 +295,7 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
     - Returns: Confirmation with updated ad details and a confirmation link
 
-19. `mcp_meta_ads_update_adset`
+20. `mcp_meta_ads_update_adset`
     - Update an ad set with new settings including frequency caps
     - Inputs:
       - `adset_id`: Meta Ads ad set ID
@@ -300,7 +307,7 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
     - Returns: Confirmation with updated ad set details and a confirmation link
 
-20. `mcp_meta_ads_get_insights`
+21. `mcp_meta_ads_get_insights`
     - Get performance insights for a campaign, ad set, ad or account
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -310,13 +317,13 @@ For local installation configuration, authentication options, and advanced techn
       - `level`: Level of aggregation (ad, adset, campaign, account)
     - Returns: Performance metrics for the specified object
 
-21. `mcp_meta_ads_get_login_link`
+22. `mcp_meta_ads_get_login_link`
     - Get a clickable login link for Meta Ads authentication
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
     - Returns: A clickable resource link for Meta authentication
 
-22. `mcp_meta-ads_create_budget_schedule`
+23. `mcp_meta_ads_create_budget_schedule`
     - Create a budget schedule for a Meta Ads campaign.
     - Inputs:
       - `campaign_id`: Meta Ads campaign ID.
@@ -327,7 +334,7 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token.
     - Returns: JSON string with the ID of the created budget schedule or an error message.
 
-23. `mcp_meta_ads_search_interests`
+24. `mcp_meta_ads_search_interests`
     - Search for interest targeting options by keyword
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -335,7 +342,7 @@ For local installation configuration, authentication options, and advanced techn
       - `limit`: Maximum number of results to return (default: 25)
     - Returns: Interest data with id, name, audience_size, and path fields
 
-24. `mcp_meta_ads_get_interest_suggestions`
+25. `mcp_meta_ads_get_interest_suggestions`
     - Get interest suggestions based on existing interests
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -343,7 +350,7 @@ For local installation configuration, authentication options, and advanced techn
       - `limit`: Maximum number of suggestions to return (default: 25)
     - Returns: Suggested interests with id, name, audience_size, and description fields
 
-24. `mcp_meta_ads_validate_interests`
+26. `mcp_meta_ads_validate_interests`
     - Validate interest names or IDs for targeting
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -351,14 +358,14 @@ For local installation configuration, authentication options, and advanced techn
       - `interest_fbid_list`: List of interest IDs to validate (e.g., ["6003700426513"])
     - Returns: Validation results showing valid status and audience_size for each interest
 
-25. `mcp_meta_ads_search_behaviors`
+27. `mcp_meta_ads_search_behaviors`
     - Get all available behavior targeting options
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
       - `limit`: Maximum number of results to return (default: 50)
     - Returns: Behavior targeting options with id, name, audience_size bounds, path, and description
 
-26. `mcp_meta_ads_search_demographics`
+28. `mcp_meta_ads_search_demographics`
     - Get demographic targeting options
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -366,7 +373,7 @@ For local installation configuration, authentication options, and advanced techn
       - `limit`: Maximum number of results to return (default: 50)
     - Returns: Demographic targeting options with id, name, audience_size bounds, path, and description
 
-27. `mcp_meta_ads_search_geo_locations`
+29. `mcp_meta_ads_search_geo_locations`
     - Search for geographic targeting locations
     - Inputs:
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
@@ -375,7 +382,7 @@ For local installation configuration, authentication options, and advanced techn
       - `limit`: Maximum number of results to return (default: 25)
     - Returns: Location data with key, name, type, and geographic hierarchy information
 
-28. `mcp_meta_ads_search` (Enhanced)
+30. `mcp_meta_ads_search` (Enhanced)
     - Generic search across accounts, campaigns, ads, and pages
     - Automatically includes page searching when query mentions "page" or "pages"
     - Inputs:
