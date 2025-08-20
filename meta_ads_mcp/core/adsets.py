@@ -111,8 +111,8 @@ async def create_adset(
         campaign_id: Meta Ads campaign ID this ad set belongs to
         name: Ad set name
         status: Initial ad set status (default: PAUSED)
-        daily_budget: Daily budget in account currency (in cents) as a string
-        lifetime_budget: Lifetime budget in account currency (in cents) as a string
+        daily_budget: Daily budget in account currency (in cents) as a string. Mutually exclusive with campaign budgets.
+        lifetime_budget: Lifetime budget in account currency (in cents) as a string. Mutually exclusive with campaign budgets.
         targeting: Targeting specifications for audience selection. Use targeting_automation.advantage_audience=1 for automatic audience finding.
                   Example targeting structure:
                   {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
