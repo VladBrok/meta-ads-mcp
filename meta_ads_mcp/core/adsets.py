@@ -130,7 +130,7 @@ async def create_adset(
                   - publisher_platforms: Platforms to show ads on (facebook, instagram, audience_network, messenger)
                   - facebook_positions: Facebook ad placement positions
                   - device_platforms: Target devices (mobile, desktop)
-        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', etc.)
+        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', 'OFFSITE_CONVERSIONS', 'QUALITY_LEAD', 'PAGE_LIKES' etc.)
         billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS')
         bid_amount: Bid amount in account currency (in cents)
         bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP')
