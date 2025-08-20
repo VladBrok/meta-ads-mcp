@@ -113,8 +113,23 @@ async def create_adset(
         status: Initial ad set status (default: PAUSED)
         daily_budget: Daily budget in account currency (in cents) as a string
         lifetime_budget: Lifetime budget in account currency (in cents) as a string
-        targeting: Targeting specifications including age, location, interests, etc.
-                  Use targeting_automation.advantage_audience=1 for automatic audience finding
+        targeting: Targeting specifications for audience selection. Use targeting_automation.advantage_audience=1 for automatic audience finding.
+                  Example targeting structure:
+                  {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
+                  Key targeting parameters:
+                  - age_min: Minimum age (13-65, defaults to 18)
+                  - age_max: Maximum age (13-65, must be 65 or lower)
+                  - genders: Array targeting specific genders (1=males, 2=females, omit for all)
+                  - locales: Array of language locale IDs (numeric). Target users with specific languages
+                  - geo_locations.cities: Array of city targeting objects with required fields:
+                    * key: City identifier from Meta's location database
+                    * radius: Distance around city (10-50 miles or 17-80 kilometers)
+                    * distance_unit: "mile" or "kilometer"
+                    * Limit: 250 cities maximum
+                  - geo_locations.location_types: Must be ["home", "recent"] if specified
+                  - publisher_platforms: Platforms to show ads on (facebook, instagram, audience_network, messenger)
+                  - facebook_positions: Facebook ad placement positions
+                  - device_platforms: Target devices (mobile, desktop)
         optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', etc.)
         billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS')
         bid_amount: Bid amount in account currency (in cents)
