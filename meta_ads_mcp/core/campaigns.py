@@ -29,15 +29,8 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
         after: Pagination cursor to get the next set of results
         campaign_ids: internal field, do not use
     """
-    # If no account ID is specified, try to get the first one for the user
     if not account_id:
-        accounts_json = await get_ad_accounts("me", json.dumps({"limit": 1}), access_token)
-        accounts_data = json.loads(accounts_json)
-        
-        if "data" in accounts_data and accounts_data["data"]:
-            account_id = accounts_data["data"][0]["id"]
-        else:
-            return json.dumps({"error": "No account ID specified and no accounts found for user"})
+        return json.dumps({"error": "No account ID specified"})
     
     endpoint = f"{account_id}/campaigns"
     params = {
@@ -111,7 +104,9 @@ async def create_campaign(
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
         name: Campaign name
-        objective: Campaign objective. Validates ad objectives. enum{BRAND_AWARENESS, LEAD_GENERATION, LINK_CLICKS, CONVERSIONS, OUTCOME_TRAFFIC, etc.}.
+        objective: Campaign objective (outcome-based). Must be one of:
+                   OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT,
+                   OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_APP_PROMOTION.
         status: Initial campaign status (default: PAUSED)
         special_ad_categories: List of special ad categories if applicable
         special_ad_category_country: Country for special ad categories (e.g., 'NL', 'DE', 'US')
@@ -138,10 +133,6 @@ async def create_campaign(
     # Special_ad_categories is required by the API, set default if not provided
     if special_ad_categories is None:
         special_ad_categories = []
-    
-    # For this example, we'll add a fixed daily budget if none is provided and we're not using ad set level budgets
-    if not daily_budget and not lifetime_budget and not use_adset_level_budgets:
-        daily_budget = "1000"  # Default to $10 USD
     
     endpoint = f"{account_id}/campaigns"
     

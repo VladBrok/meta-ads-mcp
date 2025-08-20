@@ -28,15 +28,8 @@ async def get_ads(access_token: str = None, account_id: str = None, limit: int =
         campaign_id: Optional campaign ID to filter by
         adset_id: Optional ad set ID to filter by
     """
-    # If no account ID is specified, try to get the first one for the user
     if not account_id:
-        accounts_json = await get_ad_accounts("me", json.dumps({"limit": 1}), access_token)
-        accounts_data = json.loads(accounts_json)
-        
-        if "data" in accounts_data and accounts_data["data"]:
-            account_id = accounts_data["data"][0]["id"]
-        else:
-            return json.dumps({"error": "No account ID specified and no accounts found for user"})
+        return json.dumps({"error": "No account ID specified"})
     
     # Prioritize adset_id over campaign_id - use adset-specific endpoint
     if adset_id:
@@ -171,16 +164,11 @@ async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
         
     endpoint = f"{ad_id}/adcreatives"
     params = {
-        "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,asset_feed_spec,image_urls_for_viewing"
+        "fields": "id,name,title,body,status,image_url,image_hash,object_story_spec,asset_feed_spec"
     }
     
     data = await make_api_request(endpoint, access_token, params)
     
-    # Add image URLs for direct viewing if available
-    if 'data' in data:
-        for creative in data['data']:
-            creative['image_urls_for_viewing'] = extract_creative_image_urls(creative)
-
     return json.dumps(data)
 
 
@@ -640,10 +628,7 @@ async def create_ad_creative(
     link_url: str = None,
     message: str = None,
     headline: str = None,
-    headlines: List[str] = None,
     description: str = None,
-    descriptions: List[str] = None,
-    dynamic_creative_spec: Dict[str, Any] = None,
     call_to_action_type: str = None,
     instagram_actor_id: str = None
 ) -> str:
@@ -658,11 +643,8 @@ async def create_ad_creative(
         page_id: Facebook Page ID to be used for the ad
         link_url: Destination URL for the ad
         message: Ad copy/text
-        headline: Single headline for simple ads (cannot be used with headlines)
-        headlines: List of headlines for dynamic creative testing (cannot be used with headline)
-        description: Single description for simple ads (cannot be used with descriptions)
-        descriptions: List of descriptions for dynamic creative testing (cannot be used with description)
-        dynamic_creative_spec: Dynamic creative optimization settings
+        headline: Single headline for the ad
+        description: Single description for the ad
         call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
         instagram_actor_id: Optional Instagram account ID for Instagram placements
     
@@ -683,125 +665,32 @@ async def create_ad_creative(
     if not account_id.startswith("act_"):
         account_id = f"act_{account_id}"
     
-    # Enhanced page discovery: If no page ID is provided, use robust discovery methods
-    if not page_id:
-        try:
-            # Use the comprehensive page discovery logic from get_account_pages
-            page_discovery_result = await _discover_pages_for_account(account_id, access_token)
-            
-            if page_discovery_result.get("success"):
-                page_id = page_discovery_result["page_id"]
-                page_name = page_discovery_result.get("page_name", "Unknown")
-                print(f"Auto-discovered page ID: {page_id} ({page_name})")
-            else:
-                return json.dumps({
-                    "error": "No page ID provided and no suitable pages found for this account",
-                    "details": page_discovery_result.get("message", "Page discovery failed"),
-                    "suggestions": [
-                        "Use get_account_pages to see available pages",
-                        "Use search_pages_by_name to find specific pages",
-                        "Provide a page_id parameter manually"
-                    ]
-                })
-        except Exception as e:
-            return json.dumps({
-                "error": "Error during page discovery",
-                "details": str(e),
-                "suggestion": "Please provide a page_id parameter or use get_account_pages to find available pages"
-            })
-    
-    # Validate headline/description parameters - cannot mix simple and complex
-    if headline and headlines:
-        return json.dumps({"error": "Cannot specify both 'headline' and 'headlines'. Use 'headline' for single headline or 'headlines' for multiple."})
-    
-    if description and descriptions:
-        return json.dumps({"error": "Cannot specify both 'description' and 'descriptions'. Use 'description' for single description or 'descriptions' for multiple."})
-    
-    # Convert simple parameters to complex format for internal processing
-    final_headlines = None
-    final_descriptions = None
-    
-    if headline:
-        final_headlines = [headline]
-    elif headlines:
-        final_headlines = headlines
-        
-    if description:
-        final_descriptions = [description]
-    elif descriptions:
-        final_descriptions = descriptions
-    
-    # Validate dynamic creative parameters
-    if final_headlines:
-        if len(final_headlines) > 5:
-            return json.dumps({"error": "Maximum 5 headlines allowed for dynamic creatives"})
-        for i, h in enumerate(final_headlines):
-            if len(h) > 40:
-                return json.dumps({"error": f"Headline {i+1} exceeds 40 character limit"})
-    
-    if final_descriptions:
-        if len(final_descriptions) > 5:
-            return json.dumps({"error": "Maximum 5 descriptions allowed for dynamic creatives"})
-        for i, d in enumerate(final_descriptions):
-            if len(d) > 125:
-                return json.dumps({"error": f"Description {i+1} exceeds 125 character limit"})
-    
     # Prepare the creative data
     creative_data = {
         "name": name
     }
     
-    # Choose between asset_feed_spec (dynamic creative) or object_story_spec (traditional)
-    if final_headlines or final_descriptions:
-        # Use asset_feed_spec for dynamic creatives
-        asset_feed_spec = {
-            "ad_formats": ["SINGLE_IMAGE"],
-            "images": [{"hash": image_hash}],
-            "link_urls": [{"website_url": link_url if link_url else "https://facebook.com"}]
+    # Use traditional object_story_spec for non-dynamic creative
+    creative_data["object_story_spec"] = {
+        "page_id": page_id,
+        "link_data": {
+            "image_hash": image_hash,
+            "link": link_url if link_url else "https://facebook.com"
         }
-        
-        # Handle headlines
-        if final_headlines:
-            asset_feed_spec["headlines"] = [{"text": headline_text} for headline_text in final_headlines]
-            
-        # Handle descriptions  
-        if final_descriptions:
-            asset_feed_spec["descriptions"] = [{"text": description_text} for description_text in final_descriptions]
-        
-        # Add message as primary_texts if provided
-        if message:
-            asset_feed_spec["primary_texts"] = [{"text": message}]
-        
-        # Add call_to_action_types if provided
-        if call_to_action_type:
-            asset_feed_spec["call_to_action_types"] = [call_to_action_type]
-        
-        creative_data["asset_feed_spec"] = asset_feed_spec
-        
-        # For dynamic creatives, we need a simplified object_story_spec
-        creative_data["object_story_spec"] = {
-            "page_id": page_id
-        }
-    else:
-        # Use traditional object_story_spec for single creative
-        creative_data["object_story_spec"] = {
-            "page_id": page_id,
-            "link_data": {
-                "image_hash": image_hash,
-                "link": link_url if link_url else "https://facebook.com"
-            }
-        }
-        
-        # Add optional parameters if provided
-        if message:
-            creative_data["object_story_spec"]["link_data"]["message"] = message
+    }
     
-    # Add dynamic creative spec if provided
-    if dynamic_creative_spec:
-        creative_data["dynamic_creative_spec"] = dynamic_creative_spec
+    # Add optional parameters if provided
+    if message:
+        creative_data["object_story_spec"]["link_data"]["message"] = message
+        
+    if headline:
+        creative_data["object_story_spec"]["link_data"]["name"] = headline
+        
+    if description:
+        creative_data["object_story_spec"]["link_data"]["description"] = description
     
-    # Only add call_to_action to object_story_spec if we're not using asset_feed_spec
-    if call_to_action_type and "asset_feed_spec" not in creative_data:
+    # Add call_to_action to object_story_spec if provided
+    if call_to_action_type:
         creative_data["object_story_spec"]["link_data"]["call_to_action"] = {
             "type": call_to_action_type
         }
@@ -821,7 +710,7 @@ async def create_ad_creative(
             creative_id = data["id"]
             creative_endpoint = f"{creative_id}"
             creative_params = {
-                "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,asset_feed_spec,url_tags,link_url"
+                "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,url_tags,link_url"
             }
             
             creative_details = await make_api_request(creative_endpoint, access_token, creative_params)
@@ -849,10 +738,7 @@ async def update_ad_creative(
     name: str = None,
     message: str = None,
     headline: str = None,
-    headlines: List[str] = None,
     description: str = None,
-    descriptions: List[str] = None,
-    dynamic_creative_spec: Dict[str, Any] = None,
     call_to_action_type: str = None
 ) -> str:
     """
@@ -863,11 +749,8 @@ async def update_ad_creative(
         creative_id: Meta Ads creative ID to update
         name: New creative name
         message: New ad copy/text
-        headline: Single headline for simple ads (cannot be used with headlines)
-        headlines: New list of headlines for dynamic creative testing (cannot be used with headline)
-        description: Single description for simple ads (cannot be used with descriptions)
-        descriptions: New list of descriptions for dynamic creative testing (cannot be used with description)
-        dynamic_creative_spec: New dynamic creative optimization settings
+        headline: New headline for the ad
+        description: New description for the ad
         call_to_action_type: New call to action button type
     
     Returns:
@@ -877,86 +760,34 @@ async def update_ad_creative(
     if not creative_id:
         return json.dumps({"error": "No creative ID provided"})
     
-    # Validate headline/description parameters - cannot mix simple and complex
-    if headline and headlines:
-        return json.dumps({"error": "Cannot specify both 'headline' and 'headlines'. Use 'headline' for single headline or 'headlines' for multiple."})
-    
-    if description and descriptions:
-        return json.dumps({"error": "Cannot specify both 'description' and 'descriptions'. Use 'description' for single description or 'descriptions' for multiple."})
-    
-    # Convert simple parameters to complex format for internal processing
-    final_headlines = None
-    final_descriptions = None
-    
-    if headline:
-        final_headlines = [headline]
-    elif headlines:
-        final_headlines = headlines
-        
-    if description:
-        final_descriptions = [description]
-    elif descriptions:
-        final_descriptions = descriptions
-    
-    # Validate dynamic creative parameters
-    if final_headlines:
-        if len(final_headlines) > 5:
-            return json.dumps({"error": "Maximum 5 headlines allowed for dynamic creatives"})
-        for i, h in enumerate(final_headlines):
-            if len(h) > 40:
-                return json.dumps({"error": f"Headline {i+1} exceeds 40 character limit"})
-    
-    if final_descriptions:
-        if len(final_descriptions) > 5:
-            return json.dumps({"error": "Maximum 5 descriptions allowed for dynamic creatives"})
-        for i, d in enumerate(final_descriptions):
-            if len(d) > 125:
-                return json.dumps({"error": f"Description {i+1} exceeds 125 character limit"})
-    
     # Prepare the update data
     update_data = {}
     
     if name:
         update_data["name"] = name
     
+    # Handle object_story_spec updates
+    object_story_spec_updates = {}
+    link_data_updates = {}
+    
     if message:
-        update_data["object_story_spec"] = {"link_data": {"message": message}}
+        link_data_updates["message"] = message
+        
+    if headline:
+        link_data_updates["name"] = headline
+        
+    if description:
+        link_data_updates["description"] = description
     
-    # Handle dynamic creative assets via asset_feed_spec
-    if final_headlines or final_descriptions or dynamic_creative_spec:
-        asset_feed_spec = {}
-        
-        # Add required ad_formats field for dynamic creatives
-        asset_feed_spec["ad_formats"] = ["SINGLE_IMAGE"]
-        
-        # Handle headlines
-        if final_headlines:
-            asset_feed_spec["headlines"] = [{"text": headline_text} for headline_text in final_headlines]
-            
-        # Handle descriptions  
-        if final_descriptions:
-            asset_feed_spec["descriptions"] = [{"text": description_text} for description_text in final_descriptions]
-        
-        # Add message as primary_texts if provided
-        if message:
-            asset_feed_spec["primary_texts"] = [{"text": message}]
-        
-        update_data["asset_feed_spec"] = asset_feed_spec
-    
-    # Add dynamic creative spec if provided
-    if dynamic_creative_spec:
-        update_data["dynamic_creative_spec"] = dynamic_creative_spec
-    
-    # Handle call_to_action - add to asset_feed_spec if using dynamic creative, otherwise to object_story_spec
     if call_to_action_type:
-        if "asset_feed_spec" in update_data:
-            update_data["asset_feed_spec"]["call_to_action_types"] = [call_to_action_type]
-        else:
-            if "object_story_spec" not in update_data:
-                update_data["object_story_spec"] = {"link_data": {}}
-            update_data["object_story_spec"]["link_data"]["call_to_action"] = {
-                "type": call_to_action_type
-            }
+        link_data_updates["call_to_action"] = {
+            "type": call_to_action_type
+        }
+    
+    # Add link_data to object_story_spec if we have any link_data updates
+    if link_data_updates:
+        object_story_spec_updates["link_data"] = link_data_updates
+        update_data["object_story_spec"] = object_story_spec_updates
     
     # Prepare the API endpoint for updating the creative
     endpoint = f"{creative_id}"
@@ -969,7 +800,7 @@ async def update_ad_creative(
         if "id" in data:
             creative_endpoint = f"{creative_id}"
             creative_params = {
-                "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,url_tags,link_url,dynamic_creative_spec"
+                "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,url_tags,link_url"
             }
             
             creative_details = await make_api_request(creative_endpoint, access_token, creative_params)
@@ -1383,8 +1214,3 @@ async def get_account_pages(access_token: str = None, account_id: str = None) ->
             "error": "Failed to get account pages",
             "details": str(e)
         })
-
-
-
-
-

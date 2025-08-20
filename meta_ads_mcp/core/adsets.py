@@ -19,15 +19,8 @@ async def get_adsets(access_token: str = None, account_id: str = None, limit: in
         limit: Maximum number of ad sets to return (default: 10)
         campaign_id: Optional campaign ID to filter by
     """
-    # If no account ID is specified, try to get the first one for the user
     if not account_id:
-        accounts_json = await get_ad_accounts("me", json.dumps({"limit": 1}), access_token)
-        accounts_data = json.loads(accounts_json)
-        
-        if "data" in accounts_data and accounts_data["data"]:
-            account_id = accounts_data["data"][0]["id"]
-        else:
-            return json.dumps({"error": "No account ID specified and no accounts found for user"})
+        return json.dumps({"error": "No account ID specified"})
     
     # Change endpoint based on whether campaign_id is provided
     if campaign_id:
@@ -107,6 +100,7 @@ async def create_adset(
     dsa_payor: str = None,
     promoted_object: Dict[str, Any] = None,
     destination_type: str = None,
+    attribution_spec: List[Dict[str, Any]] = None,
     access_token: str = None
 ) -> str:
     """
@@ -121,7 +115,7 @@ async def create_adset(
         lifetime_budget: Lifetime budget in account currency (in cents) as a string
         targeting: Targeting specifications including age, location, interests, etc.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding
-        optimization_goal: Conversion optimization goal (e.g., 'LINK_CLICKS', 'REACH', 'CONVERSIONS', 'APP_INSTALLS')
+        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', etc.)
         billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS')
         bid_amount: Bid amount in account currency (in cents)
         bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP')
@@ -129,11 +123,14 @@ async def create_adset(
         end_time: End time in ISO 8601 format
         dsa_beneficiary: DSA beneficiary (person/organization benefiting from ads) for European compliance
         dsa_payor: DSA payor (person/organization paying for ads) for European compliance
-        promoted_object: Mobile app configuration for APP_INSTALLS campaigns. Required fields: application_id, object_store_url.
-                        Optional fields: custom_event_type, pixel_id, page_id.
-                        Example: {"application_id": "123456789012345", "object_store_url": "https://apps.apple.com/app/id123456789"}
-        destination_type: Where users are directed after clicking the ad (e.g., 'APP_STORE', 'DEEPLINK', 'APP_INSTALL').
-                         Required for mobile app campaigns.
+        promoted_object: Object promotion configuration. Requirements: application_id + object_store_url for apps,
+                        pixel_id + custom_event_type for conversion tracking, page_id for page promotion.
+                        pixel_id: Facebook conversion pixel ID (numeric string) for offsite conversions.
+                        custom_event_type: App/conversion event (PURCHASE, LEAD, COMPLETE_REGISTRATION, ADD_TO_CART, etc.).
+                        Must have permissions for promoted objects. Example: {"application_id": "123456789012345", "object_store_url": "https://apps.apple.com/app/id123456789"}
+        destination_type: Where users are directed after clicking the ad. Valid types: WEBSITE, APP, MESSENGER, INSTAGRAM_DIRECT.
+        attribution_spec: List of attribution specifications for conversion tracking. Each spec defines event_type and window_days.
+                         Example: [{"event_type": "CLICK_THROUGH", "window_days": 7}, {"event_type": "VIEW_THROUGH", "window_days": 1}]
         access_token: Meta API access token (optional - will use cached token if not provided)
     """
     # Check required parameters
@@ -151,68 +148,6 @@ async def create_adset(
     
     if not billing_event:
         return json.dumps({"error": "No billing event provided"})
-    
-    # Validate mobile app parameters for APP_INSTALLS campaigns
-    if optimization_goal == "APP_INSTALLS":
-        if not promoted_object:
-            return json.dumps({
-                "error": "promoted_object is required for APP_INSTALLS optimization goal",
-                "details": "Mobile app campaigns must specify which app is being promoted",
-                "required_fields": ["application_id", "object_store_url"]
-            })
-        
-        # Validate promoted_object structure
-        if not isinstance(promoted_object, dict):
-            return json.dumps({
-                "error": "promoted_object must be a dictionary",
-                "example": {"application_id": "123456789012345", "object_store_url": "https://apps.apple.com/app/id123456789"}
-            })
-        
-        # Validate required promoted_object fields
-        if "application_id" not in promoted_object:
-            return json.dumps({
-                "error": "promoted_object missing required field: application_id",
-                "details": "application_id is the Facebook app ID for your mobile app"
-            })
-        
-        if "object_store_url" not in promoted_object:
-            return json.dumps({
-                "error": "promoted_object missing required field: object_store_url", 
-                "details": "object_store_url should be the App Store or Google Play URL for your app"
-            })
-        
-        # Validate store URL format
-        store_url = promoted_object["object_store_url"]
-        valid_store_patterns = [
-            "apps.apple.com",  # iOS App Store
-            "play.google.com",  # Google Play Store
-            "itunes.apple.com"  # Alternative iOS format
-        ]
-        
-        if not any(pattern in store_url for pattern in valid_store_patterns):
-            return json.dumps({
-                "error": "Invalid object_store_url format",
-                "details": "URL must be from App Store (apps.apple.com) or Google Play (play.google.com)",
-                "provided_url": store_url
-            })
-    
-    # Validate destination_type if provided
-    if destination_type:
-        valid_destination_types = ["APP_STORE", "DEEPLINK", "APP_INSTALL"]
-        if destination_type not in valid_destination_types:
-            return json.dumps({
-                "error": f"Invalid destination_type: {destination_type}",
-                "valid_values": valid_destination_types
-            })
-    
-    # Basic targeting is required if not provided
-    if not targeting:
-        targeting = {
-            "age_min": 18,
-            "age_max": 65,
-            "geo_locations": {"countries": ["US"]},
-            "targeting_automation": {"advantage_audience": 1}
-        }
     
     endpoint = f"{account_id}/adsets"
     
@@ -260,40 +195,12 @@ async def create_adset(
     if destination_type:
         params["destination_type"] = destination_type
     
-    try:
-        data = await make_api_request(endpoint, access_token, params, method="POST")
-        return json.dumps(data)
-    except Exception as e:
-        error_msg = str(e)
-        
-        # Enhanced error handling for DSA beneficiary issues
-        if "permission" in error_msg.lower() or "insufficient" in error_msg.lower():
-            return json.dumps({
-                "error": "Insufficient permissions to set DSA beneficiary. Please ensure you have business_management permissions.",
-                "details": error_msg,
-                "params_sent": params,
-                "permission_required": True
-            })
-        elif "dsa_beneficiary" in error_msg.lower() and ("not supported" in error_msg.lower() or "parameter" in error_msg.lower()):
-            return json.dumps({
-                "error": "DSA beneficiary parameter not supported in this API version. Please set DSA beneficiary manually in Facebook Ads Manager.",
-                "details": error_msg,
-                "params_sent": params,
-                "manual_setup_required": True
-            })
-        elif "benefits from ads" in error_msg or "DSA beneficiary" in error_msg:
-            return json.dumps({
-                "error": "DSA beneficiary required for European compliance. Please provide the person or organization that benefits from ads in this ad set.",
-                "details": error_msg,
-                "params_sent": params,
-                "dsa_required": True
-            })
-        else:
-            return json.dumps({
-                "error": "Failed to create ad set",
-                "details": error_msg,
-                "params_sent": params
-            })
+    # Add attribution spec if provided
+    if attribution_spec:
+        params["attribution_spec"] = json.dumps(attribution_spec)
+    
+    data = await make_api_request(endpoint, access_token, params, method="POST")
+    return json.dumps(data)
 
 
 @mcp_server.tool()
@@ -314,7 +221,7 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
         status: Update ad set status (ACTIVE, PAUSED, etc.)
         targeting: Complete targeting specifications (will replace existing targeting)
                   (e.g. {"targeting_automation":{"advantage_audience":1}, "geo_locations": {"countries": ["US"]}})
-        optimization_goal: Conversion optimization goal (e.g., 'LINK_CLICKS', 'CONVERSIONS', 'APP_INSTALLS', etc.)
+        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', etc.)
         daily_budget: Daily budget in account currency (in cents) as a string
         lifetime_budget: Lifetime budget in account currency (in cents) as a string
         access_token: Meta API access token (optional - will use cached token if not provided)
