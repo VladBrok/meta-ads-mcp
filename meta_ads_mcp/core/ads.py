@@ -157,7 +157,7 @@ async def get_ad_creatives(access_token: str = None, ad_id: str = None) -> str:
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
-        ad_id: Meta Ads ad ID
+        ad_id: Meta Ads ad ID (ID of an ad - NOT ad creative ID - providing an ad creative ID will result in an error)
     """
     if not ad_id:
         return json.dumps({"error": "No ad ID provided"})
