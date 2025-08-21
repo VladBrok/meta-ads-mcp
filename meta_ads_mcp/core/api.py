@@ -1,6 +1,6 @@
 """Core API functionality for Meta Ads API."""
 
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict, Optional, Callable, List
 import json
 import httpx
 import asyncio
@@ -180,6 +180,51 @@ async def make_api_request(
         except Exception as e:
             logger.error(f"Request Error: {str(e)}")
             return {"error": {"message": str(e)}}
+
+
+async def make_batch_api_request(
+    batch_requests: List[Dict[str, str]],
+    access_token: str
+) -> List[Dict[str, Any]]:
+    if not access_token:
+        logger.error("Batch API request attempted with blank access token")
+        return []
+    
+    if not batch_requests:
+        return []
+    
+    url = f"{META_GRAPH_API_BASE}/"
+    
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    batch_data = {
+        "batch": json.dumps(batch_requests)
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, data=batch_data, headers=headers, timeout=60.0)
+            response.raise_for_status()
+            
+            batch_response = response.json()
+            return batch_response
+            
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Batch HTTP Error: {e.response.status_code}")
+            try:
+                error_info = e.response.json()
+                logger.error(f"Batch Error details: {error_info}")
+            except:
+                logger.error(f"Batch Error text: {e.response.text}")
+            return []
+            
+        except Exception as e:
+            logger.error(f"Batch Request Error: {str(e)}")
+            return []
 
 
 # Generic wrapper for all Meta API tools

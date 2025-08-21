@@ -8,7 +8,7 @@ from mcp.server.fastmcp import Image
 import os
 import time
 
-from .api import meta_api_tool, make_api_request
+from .api import meta_api_tool, make_api_request, make_batch_api_request
 from .accounts import get_ad_accounts
 from .utils import download_image, try_multiple_download_methods, ad_creative_images, extract_creative_image_urls
 from .server import mcp_server
@@ -1089,17 +1089,49 @@ async def get_account_pages(access_token: str = None) -> str:
         # Sort by fan_count descending (highest first)
         all_pages.sort(key=lambda page: page.get("fan_count", 0), reverse=True)
         
-        # Return only id and name for each page
-        result_pages = []
-        for page in all_pages:
-            result_pages.append({
-                "id": page.get("id"),
-                "name": page.get("name")
+        # Step 3: Validate page access using batch API
+        if not all_pages:
+            return json.dumps({
+                "data": [],
+                "total_pages_with_access": 0,
+                "total_pages_discovered": 0
             })
         
+        # Prepare batch requests to validate page access
+        batch_requests = []
+        for page in all_pages:
+            page_id = page.get("id")
+            if page_id:
+                batch_requests.append({
+                    "method": "GET",
+                    "relative_url": f"{page_id}?fields=id,name"
+                })
+        
+        # Make batch request to validate access
+        batch_responses = await make_batch_api_request(batch_requests, access_token)
+        
+        # Filter pages based on successful batch responses
+        accessible_pages = []
+        for i, response in enumerate(batch_responses):
+            if response.get("code") == 200:
+                # Parse the successful response body
+                try:
+                    response_body = json.loads(response.get("body", "{}"))
+                    if "id" in response_body and "name" in response_body:
+                        accessible_pages.append({
+                            "id": response_body["id"],
+                            "name": response_body["name"]
+                        })
+                except json.JSONDecodeError:
+                    # Skip pages with invalid response bodies
+                    continue
+            # Ignore pages with error responses (code != 200)
+        
         return json.dumps({
-            "data": result_pages,
-            "total_pages_found": len(result_pages)
+            "data": accessible_pages,
+            "total_pages_with_access": len(accessible_pages),
+            "total_pages_discovered": len(all_pages),
+            "note": "Only pages with verified access are included"
         })
         
     except Exception as e:
