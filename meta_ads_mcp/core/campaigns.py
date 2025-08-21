@@ -113,7 +113,7 @@ async def create_campaign(
         daily_budget: Daily budget in account currency (in cents) as a string. Mutually exclusive with ad set budgets.
         lifetime_budget: Lifetime budget in account currency (in cents) as a string. Mutually exclusive with ad set budgets.
         buying_type: Buying type (e.g., 'AUCTION')
-        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP', 'COST_CAP')
+        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP', 'COST_CAP', 'LOWEST_COST_WITHOUT_CAP')
         bid_cap: Bid cap in account currency (in cents) as a string
         spend_cap: Spending limit for the campaign in account currency (in cents) as a string
         campaign_budget_optimization: Whether to enable campaign budget optimization. Mutually exclusive with ad set budgets.
