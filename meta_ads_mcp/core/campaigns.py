@@ -177,6 +177,10 @@ async def create_campaign(
     try:
         data = await make_api_request(endpoint, access_token, params, method="POST")
         
+        # Ensure name field is included in the response
+        if "name" not in data or not data.get("name"):
+            data["name"] = name
+        
         # Add a note about budget strategy if using ad set level budgets
         if use_adset_level_budgets:
             data["budget_strategy"] = "ad_set_level"
@@ -303,6 +307,11 @@ async def update_campaign(
         
         # Ensure campaign_id is included in the response
         data["campaign_id"] = campaign_id
+        
+        # Fetch campaign details to ensure name is included in response
+        campaign_details = await make_api_request(campaign_id, access_token, {"fields": "name"})
+        if "name" in campaign_details:
+            data["name"] = campaign_details["name"]
         
         # Add a note about budget strategy if switching to ad set level budgets
         if use_adset_level_budgets is not None and use_adset_level_budgets:
