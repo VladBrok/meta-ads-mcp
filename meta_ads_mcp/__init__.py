@@ -32,7 +32,8 @@ __all__ = [
     'estimate_audience_size',
     'search_behaviors',
     'search_demographics',
-    'search_geo_locations'
+    'search_geo_locations',
+    'search_locales'
 ]
 
 # Import key functions to make them available at package level
@@ -59,7 +60,8 @@ from .core import (
     estimate_audience_size,
     search_behaviors,
     search_demographics,
-    search_geo_locations
+    search_geo_locations,
+    search_locales
 )
 
 # Define a main function to be used as a package entry point

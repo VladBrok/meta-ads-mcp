@@ -382,7 +382,15 @@ For local installation configuration, authentication options, and advanced techn
       - `limit`: Maximum number of results to return (default: 25)
     - Returns: Location data with key, name, type, and geographic hierarchy information
 
-30. `mcp_meta_ads_search` (Enhanced)
+30. `mcp_meta_ads_search_locales`
+    - Search for locale codes/languages for ad targeting
+    - Inputs:
+      - `access_token` (optional): Meta API access token (will use cached token if not provided)
+      - `query`: Search term for locales (e.g., "dutch", "spanish", "english")
+      - `limit`: Maximum number of results to return (default: 25)
+    - Returns: Locale data with key (locale ID) and name fields
+
+31. `mcp_meta_ads_search` (Enhanced)
     - Generic search across accounts, campaigns, ads, and pages
     - Automatically includes page searching when query mentions "page" or "pages"
     - Inputs:

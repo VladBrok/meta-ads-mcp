@@ -329,4 +329,33 @@ async def search_geo_locations(access_token: str = None, query: str = None,
     
     data = await make_api_request(endpoint, access_token, params)
     
+    return json.dumps(data)
+
+
+@mcp_server.tool()
+@meta_api_tool
+async def search_locales(access_token: str = None, query: str = None, limit: int = 25) -> str:
+    """
+    Search for locale codes/languages for ad targeting.
+    
+    Args:
+        access_token: Meta API access token (optional - will use cached token if not provided)
+        query: Search term for locales (e.g., "dutch", "spanish", "english")
+        limit: Maximum number of results to return (default: 25)
+    
+    Returns:
+        JSON string containing locale data with key (locale ID) and name fields
+    """
+    if not query:
+        return json.dumps({"error": "No search query provided"})
+    
+    endpoint = "search"
+    params = {
+        "type": "adlocale",
+        "q": query,
+        "limit": limit
+    }
+    
+    data = await make_api_request(endpoint, access_token, params)
+    
     return json.dumps(data) 

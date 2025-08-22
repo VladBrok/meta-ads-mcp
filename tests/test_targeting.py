@@ -13,7 +13,8 @@ from meta_ads_mcp.core.targeting import (
     estimate_audience_size,
     search_behaviors,
     search_demographics,
-    search_geo_locations
+    search_geo_locations,
+    search_locales
 )
 
 
@@ -436,4 +437,88 @@ class TestSearchGeoLocations:
                 
                 # Verify the result is properly formatted
                 result_data = json.loads(result)
-                assert "data" in result_data 
+                assert "data" in result_data
+
+
+class TestSearchLocales:
+    """Test cases for search_locales function"""
+    
+    @pytest.mark.asyncio
+    async def test_search_locales_success(self):
+        """Test successful locale search"""
+        mock_response = {
+            "data": [
+                {
+                    "name": "Dutch",
+                    "key": 14
+                },
+                {
+                    "name": "Spanish", 
+                    "key": 15
+                }
+            ]
+        }
+        
+        with patch('meta_ads_mcp.core.targeting.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.return_value = mock_response
+            
+            result = await search_locales(
+                access_token="test_token",
+                query="dutch",
+                limit=10
+            )
+            
+            # Verify API call
+            mock_api.assert_called_once_with(
+                "search",
+                "test_token",
+                {
+                    "type": "adlocale",
+                    "q": "dutch", 
+                    "limit": 10
+                }
+            )
+            
+            # Verify response
+            result_data = json.loads(result)
+            assert result_data == mock_response
+    
+    @pytest.mark.asyncio
+    async def test_search_locales_no_query(self):
+        """Test search_locales with no query"""
+        result = await search_locales(access_token="test_token")
+        
+        result_data = json.loads(result)
+        # The @meta_api_tool decorator wraps errors in a 'data' field
+        assert "data" in result_data
+        nested_data = json.loads(result_data["data"])
+        assert "error" in nested_data
+        assert nested_data["error"] == "No search query provided"
+    
+    @pytest.mark.asyncio
+    async def test_search_locales_default_limit(self):
+        """Test search_locales with default limit"""
+        mock_response = {"data": []}
+        
+        # Mock both the API request and the auth system to bypass decorator issues
+        with patch('meta_ads_mcp.core.targeting.make_api_request', new_callable=AsyncMock) as mock_api:
+            with patch('meta_ads_mcp.core.api.get_current_access_token') as mock_auth:
+                mock_auth.return_value = "test_token"
+                mock_api.return_value = mock_response
+                
+                result = await search_locales(query="spanish")
+                
+                # Verify default limit is used
+                mock_api.assert_called_once_with(
+                    "search",
+                    "test_token",
+                    {
+                        "type": "adlocale",
+                        "q": "spanish",
+                        "limit": 25
+                    }
+                )
+                
+                # Verify the result is properly formatted
+                result_data = json.loads(result)
+                assert "data" in result_data
