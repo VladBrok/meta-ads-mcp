@@ -111,12 +111,13 @@ async def create_adset(
         campaign_id: Meta Ads campaign ID this ad set belongs to
         name: Ad set name
         status: Initial ad set status (default: PAUSED)
-        daily_budget: Daily budget in account currency (in cents) as a string. Mutually exclusive with campaign budgets.
-        lifetime_budget: Lifetime budget in account currency (in cents) as a string. Mutually exclusive with campaign budgets.
-        targeting: Targeting specifications for audience selection. Use targeting_automation.advantage_audience=1 for automatic audience finding.
-                  Example targeting structure:
-                  {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
-                  Key targeting parameters:
+        daily_budget: Daily budget in account currency (in cents) as a string. DO NOT set if the campaign uses campaign-level budgets - this will cause an API error.
+        lifetime_budget: Lifetime budget in account currency (in cents) as a string. DO NOT set if the campaign uses campaign-level budgets - this will cause an API error.
+        targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications. 
+                  Do not pass individual targeting fields as separate parameters.
+                  Use targeting_automation.advantage_audience=1 for automatic audience finding.
+                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
+                  Key targeting parameters to include in the single object:
                   - age_min: Minimum age (13-65, defaults to 18)
                   - age_max: Maximum age (13-65, must be 65 or lower)
                   - genders: Array targeting specific genders (1=males, 2=females, omit for all)
@@ -138,14 +139,25 @@ async def create_adset(
         end_time: End time in ISO 8601 format
         dsa_beneficiary: DSA beneficiary (person/organization benefiting from ads) for European compliance
         dsa_payor: DSA payor (person/organization paying for ads) for European compliance
-        promoted_object: Object promotion configuration. Requirements: application_id + object_store_url for apps,
-                        pixel_id + custom_event_type for conversion tracking, page_id for page promotion.
-                        pixel_id: Facebook conversion pixel ID (numeric string) for offsite conversions.
-                        custom_event_type: App/conversion event (PURCHASE, LEAD, COMPLETE_REGISTRATION, ADD_TO_CART, etc.).
-                        Must have permissions for promoted objects. Example: {"application_id": "123456789012345", "object_store_url": "https://apps.apple.com/app/id123456789"}
+        promoted_object: Pass 'promoted_object' as a complete dictionary object containing promotion configuration.
+                        Do not pass application_id, pixel_id, etc. as separate parameters.
+                        Example format (use your own values):
+                        For mobile apps: {"application_id": "123456789012345", "object_store_url": "https://apps.apple.com/app/id123456789"}
+                        For conversion tracking: {"pixel_id": "123456789012345", "custom_event_type": "LEAD"}
+                        For page promotion: {"page_id": "123456789012345"}
+                        Object requirements:
+                        - For apps: application_id + object_store_url
+                        - For conversions: pixel_id + custom_event_type (PURCHASE, LEAD, COMPLETE_REGISTRATION, ADD_TO_CART, etc.)
+                        - For pages: page_id
+                        - pixel_id: Facebook conversion pixel ID (numeric string) for offsite conversions
+                        - Must have permissions for promoted objects
         destination_type: Where users are directed after clicking the ad. Valid types: WEBSITE, APP, MESSENGER, INSTAGRAM_DIRECT.
-        attribution_spec: List of attribution specifications for conversion tracking. Each spec defines event_type and window_days.
-                         Example: [{"event_type": "CLICK_THROUGH", "window_days": 7}, {"event_type": "VIEW_THROUGH", "window_days": 1}]
+        attribution_spec: Pass 'attribution_spec' as a list of dictionary objects for conversion tracking.
+                         Do not pass event_type, window_days, etc. as separate parameters.
+                         Example format (use your own values): [{"event_type": "CLICK_THROUGH", "window_days": 7}, {"event_type": "VIEW_THROUGH", "window_days": 1}]
+                         Each dictionary object must contain:
+                         - event_type: Attribution event type (CLICK_THROUGH, VIEW_THROUGH)
+                         - window_days: Attribution window in days (1-28)
         access_token: Meta API access token (optional - will use cached token if not provided)
     """
     # Check required parameters
