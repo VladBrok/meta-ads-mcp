@@ -114,7 +114,7 @@ async def create_campaign(
         buying_type: Buying type (e.g., 'AUCTION')
         bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP', 'COST_CAP', 'LOWEST_COST_WITHOUT_CAP')
         bid_cap: Bid cap in account currency (in cents) as a string
-        spend_cap: Spending limit for the campaign in account currency (in cents) as a string
+        spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
         campaign_budget_optimization: Whether to enable campaign budget optimization. Mutually exclusive with ad set budgets.
         ab_test_control_setups: Settings for A/B testing (e.g., [{"name":"Creative A", "ad_format":"SINGLE_IMAGE"}])
         use_adset_level_budgets: If True, budgets will be set at the ad set level instead of campaign level (default: False)
