@@ -83,7 +83,6 @@ async def create_campaign(
     account_id: str = None,
     name: str = None,
     objective: str = None,
-    status: str = "PAUSED",
     special_ad_categories: List[str] = None,
     special_ad_category_country: str = None,
     daily_budget = None,
@@ -97,7 +96,7 @@ async def create_campaign(
     use_adset_level_budgets: bool = False
 ) -> str:
     """
-    Create a new campaign in a Meta Ads account.
+    Create a new campaign in a Meta Ads account. Campaign is created as paused by default.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
@@ -106,7 +105,6 @@ async def create_campaign(
         objective: Campaign objective (outcome-based). Must be one of:
                    OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT,
                    OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_APP_PROMOTION.
-        status: Initial campaign status (default: PAUSED)
         special_ad_categories: List of special ad categories if applicable
         special_ad_category_country: Country for special ad categories (e.g., 'NL', 'DE', 'US')
         daily_budget: Daily budget in account currency (in cents) as a string. Mutually exclusive with ad set budgets.
@@ -138,7 +136,7 @@ async def create_campaign(
     params = {
         "name": name,
         "objective": objective,
-        "status": status,
+        "status": "PAUSED",
         "special_ad_categories": json.dumps(special_ad_categories)  # Properly format as JSON string
     }
     
