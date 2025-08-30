@@ -68,7 +68,7 @@ async def get_campaign_details(access_token: str = None, campaign_id: str = None
     
     endpoint = f"{campaign_id}"
     params = {
-        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category_country,budget_remaining,configured_status,source_campaign_id"
+        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category_country,budget_remaining,configured_status,source_campaign_id,spend_cap"
     }
     
     data = await make_api_request(endpoint, access_token, params)
