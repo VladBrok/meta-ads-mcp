@@ -116,6 +116,7 @@ async def create_adset(
         targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications. 
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
+                  Note: Advanced targeting features are NOT supported.
                   Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
                   Key targeting parameters to include in the single object:
                   - age_min: Minimum age (13-65, defaults to 18)
