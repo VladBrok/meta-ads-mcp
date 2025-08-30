@@ -15,9 +15,8 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
     
     Note: By default, the Meta API returns a subset of available fields. 
     Other fields like 'effective_status', 'special_ad_categories', 
-    'lifetime_budget', 'spend_cap', 'budget_remaining', 'promoted_object', 
-    'source_campaign_id', etc., might be available but require specifying them
-    in the API call (currently not exposed by this tool's parameters).
+    'spend_cap', 'budget_remaining', 'promoted_object', etc., might be available 
+    but require specifying them in the API call (currently not exposed by this tool's parameters).
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
@@ -34,7 +33,7 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
     
     endpoint = f"{account_id}/campaigns"
     params = {
-        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy",
+        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,source_campaign_id",
         "limit": limit
     }
     
