@@ -337,3 +337,108 @@ async def update_campaign(
             "details": error_msg,
             "params_sent": params # Be careful about logging sensitive data if any
         }) 
+
+
+@mcp_server.tool()
+@meta_api_tool
+async def get_complete_campaign_details_deep(access_token: str = None, account_id: str = None, campaign_id: str = None, name_contains: str = None) -> str:
+    """
+    Get comprehensive campaign information including campaign details, ad sets, ads, and ad creatives.
+    This tool orchestrates multiple API calls to provide a complete view of a campaign's structure.
+    
+    Args:
+        access_token: Meta API access token (optional - will use cached token if not provided)
+        account_id: Meta Ads account ID (required, format: act_XXXXXXXXX)
+        campaign_id: Meta Ads campaign ID (alternative to name_contains)
+        name_contains: Search for campaigns containing this text in their name (alternative to campaign_id)
+    """
+    if not account_id:
+        return json.dumps({"error": "account_id is required"})
+    
+    campaign_details = await get_campaign_details(access_token=access_token, account_id=account_id, campaign_id=campaign_id, name_contains=name_contains)
+    campaign_data = json.loads(campaign_details)
+    
+    if "error" in campaign_data:
+        return campaign_details
+    
+    if name_contains and "data" in campaign_data and len(campaign_data["data"]) > 1:
+        campaign_names = [camp.get("name", "Unknown") for camp in campaign_data["data"]]
+        return json.dumps({
+            "error": f"Search returned {len(campaign_data['data'])} campaigns instead of 1. Found campaigns: {', '.join(campaign_names)}. Please refine your search to target a single campaign."
+        })
+    
+    # Extract campaign info
+    if name_contains and "data" in campaign_data and campaign_data["data"]:
+        actual_campaign = campaign_data["data"][0]
+        actual_campaign_id = actual_campaign["id"]
+    elif campaign_id:
+        actual_campaign_id = campaign_id
+        if "data" not in campaign_data:
+            campaign_data = {"data": [campaign_data]}
+    else:
+        return json.dumps({"error": "Either campaign_id or name_contains must be provided"})
+    
+    result = {
+        "campaign": campaign_data,
+        "adsets": {"data": []},
+        "ads": {"data": []},
+        "ad_creatives": {"data": []},
+        "errors": []
+    }
+    
+    from .adsets import get_adsets, get_adset_details
+    from .ads import get_ads, get_ad_creatives
+    
+    adsets_response = await get_adsets(access_token=access_token, account_id=account_id, campaign_id=actual_campaign_id)
+    adsets_data = json.loads(adsets_response)
+    
+    if "error" in adsets_data:
+        result["errors"].append(f"Adsets API error: {adsets_data.get('error', 'Unknown error')}")
+        result["adsets"]["error"] = "Error retrieving ad sets"
+    elif "data" in adsets_data and adsets_data["data"]:
+        result["adsets"] = adsets_data
+        
+        # Get detailed adset info
+        detailed_adsets = []
+        for adset in adsets_data["data"]:
+            adset_details_response = await get_adset_details(access_token=access_token, adset_id=adset["id"])
+            adset_details_data = json.loads(adset_details_response)
+            if "error" not in adset_details_data:
+                detailed_adsets.append(adset_details_data)
+            else:
+                result["errors"].append(f"Adset details error for {adset.get('id', 'unknown')}: {adset_details_data.get('error', 'Unknown error')}")
+        
+        if detailed_adsets:
+            result["adsets"]["data"] = detailed_adsets
+    else:
+        result["adsets"]["error"] = "No ad sets found"
+    
+    ads_response = await get_ads(access_token=access_token, account_id=account_id, campaign_id=actual_campaign_id)
+    ads_data = json.loads(ads_response)
+    
+    if "error" in ads_data:
+        result["errors"].append(f"Ads API error: {ads_data.get('error', 'Unknown error')}")
+        result["ads"]["error"] = "Error retrieving ads"
+        result["ad_creatives"]["error"] = "Cannot retrieve ad creatives due to ads error"
+    elif "data" in ads_data and ads_data["data"]:
+        result["ads"] = ads_data
+        
+        all_creatives = []
+        for ad in ads_data["data"]:
+            creatives_response = await get_ad_creatives(access_token=access_token, ad_id=ad["id"])
+            creatives_data = json.loads(creatives_response)
+            if "error" not in creatives_data and "data" in creatives_data:
+                all_creatives.extend(creatives_data["data"])
+            else:
+                result["errors"].append(f"Ad creatives error for ad {ad.get('id', 'unknown')}: {creatives_data.get('error', 'Unknown error')}")
+        
+        if all_creatives:
+            result["ad_creatives"]["data"] = all_creatives
+    else:
+        result["ads"]["error"] = "No ads found"
+        result["ad_creatives"]["error"] = "No ads available to retrieve creatives"
+    
+    if not result["errors"]:
+        del result["errors"]
+    
+    return json.dumps(result)
