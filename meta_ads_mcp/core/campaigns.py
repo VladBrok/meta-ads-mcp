@@ -55,21 +55,34 @@ async def get_campaigns(access_token: str = None, account_id: str = None, limit:
 
 @mcp_server.tool()
 @meta_api_tool
-async def get_campaign_details(access_token: str = None, campaign_id: str = None) -> str:
+async def get_campaign_details(access_token: str = None, account_id: str = None, campaign_id: str = None, name_contains: str = None) -> str:
     """
-    Get detailed information about a specific campaign.
+    Get detailed information about a specific campaign by ID or search campaigns by name.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
-        campaign_id: Meta Ads campaign ID
+        account_id: Meta Ads account ID (required, format: act_XXXXXXXXX)
+        campaign_id: Meta Ads campaign ID (alternative to name_contains)
+        name_contains: Search for campaigns containing this text in their name (alternative to campaign_id)
     """
-    if not campaign_id:
-        return json.dumps({"error": "No campaign ID provided"})
+    if not account_id:
+        return json.dumps({"error": "account_id is required"})
     
-    endpoint = f"{campaign_id}"
-    params = {
-        "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category_country,budget_remaining,configured_status,source_campaign_id,spend_cap"
-    }
+    if name_contains and name_contains.strip():
+        endpoint = f"{account_id}/campaigns"
+        filtering = [{"field": "name", "operator": "CONTAIN", "value": name_contains.strip()}]
+        params = {
+            "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category_country,budget_remaining,configured_status,source_campaign_id,spend_cap",
+            "filtering": json.dumps(filtering)
+        }
+    else:
+        if not campaign_id:
+            return json.dumps({"error": "Either campaign_id or name_contains must be provided"})
+        
+        endpoint = f"{campaign_id}"
+        params = {
+            "fields": "id,name,objective,status,daily_budget,lifetime_budget,buying_type,start_time,stop_time,created_time,updated_time,bid_strategy,special_ad_categories,special_ad_category_country,budget_remaining,configured_status,source_campaign_id,spend_cap"
+        }
     
     data = await make_api_request(endpoint, access_token, params)
     
