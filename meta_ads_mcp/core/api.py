@@ -306,7 +306,7 @@ def meta_api_tool(func):
                                 "token_link": "[Get a new Pipeboard API token](https://pipeboard.co/api-tokens)"
                             }
                         }
-                    })
+                    }, separators=(',', ': '))
                 else:
                     return json.dumps({
                         "error": {
@@ -323,46 +323,49 @@ def meta_api_tool(func):
                                 "markdown_link": f"[Click here to authenticate with Meta Ads API]({auth_url})"
                             }
                         }
-                    })
+                    }, separators=(',', ': '))
                 
             # Call the original function
             result = await func(*args, **kwargs)
-            
-            # If the result is a string (JSON), try to parse it to check for errors
+
+            # Normalize all JSON outputs to compact, single-line strings
             if isinstance(result, str):
                 try:
-                    result_dict = json.loads(result)
-                    if "error" in result_dict:
-                        logger.error(f"Error in API response: {result_dict['error']}")
-                        # If this is an app ID error, log more details
-                        if isinstance(result_dict.get("details", {}).get("error", {}), dict):
-                            error_obj = result_dict["details"]["error"]
-                            if error_obj.get("code") == 200 and "Provide valid app ID" in error_obj.get("message", ""):
-                                logger.error("Meta API authentication configuration issue")
-                                logger.error(f"Current app_id: {app_id}")
-                                # Replace the confusing error with a more user-friendly one
-                                return json.dumps({
-                                    "error": {
-                                        "message": "Meta API Configuration Issue",
-                                        "details": {
-                                            "description": "Your Meta API app is not properly configured",
-                                            "action_required": "Check your META_APP_ID environment variable",
-                                            "current_app_id": app_id,
-                                            "original_error": error_obj.get("message")
-                                        }
+                    parsed = json.loads(result)
+                    # Log and normalize known error structures
+                    if isinstance(parsed, dict) and "error" in parsed:
+                        logger.error(f"Error in API response: {parsed['error']}")
+                        # If this is an app ID error, log more details and rewrite for clarity
+                        details_err = parsed.get("details", {}).get("error", {}) if isinstance(parsed.get("details"), dict) else {}
+                        if isinstance(details_err, dict) and details_err.get("code") == 200 and "Provide valid app ID" in details_err.get("message", ""):
+                            logger.error("Meta API authentication configuration issue")
+                            logger.error(f"Current app_id: {app_id}")
+                            friendly = {
+                                "error": {
+                                    "message": "Meta API Configuration Issue",
+                                    "details": {
+                                        "description": "Your Meta API app is not properly configured",
+                                        "action_required": "Check your META_APP_ID environment variable",
+                                        "current_app_id": app_id,
+                                        "original_error": details_err.get("message")
                                     }
-                                })
+                                }
+                            }
+                            return json.dumps(friendly, separators=(',', ': '))
+
+                    # Compact re-serialization for any valid JSON
+                    return json.dumps(parsed, separators=(',', ': '))
                 except Exception:
-                    # Not JSON or other parsing error, wrap it in a dictionary
-                    return json.dumps({"data": result})
-            
-            # If result is already a dictionary, ensure it's properly serialized
+                    # Not JSON; keep as-is (could be plain text or Image resource hints)
+                    return result
+
+            # If result is already a dictionary, ensure it's properly serialized compactly
             if isinstance(result, dict):
-                return json.dumps(result)
-            
+                return json.dumps(result, separators=(',', ': '))
+
             return result
         except Exception as e:
             logger.error(f"Error in {func.__name__}: {str(e)}")
-            return json.dumps({"error": str(e)})
+            return json.dumps({"error": str(e)}, separators=(',', ': '))
     
     return wrapper 
