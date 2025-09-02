@@ -104,8 +104,7 @@ async def create_campaign(
     bid_strategy: str = None,
     bid_cap = None,
     spend_cap = None,
-    campaign_budget_optimization: bool = None,
-    ab_test_control_setups: Optional[List[Dict[str, Any]]] = None
+    campaign_budget_optimization: bool = None
 ) -> str:
     """
     Create a new campaign in a Meta Ads account. Campaign is created as paused by default.
@@ -126,7 +125,6 @@ async def create_campaign(
         bid_cap: Bid cap in account currency (in cents) as a string
         spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
         campaign_budget_optimization: Whether to enable campaign budget optimization.
-        ab_test_control_setups: Settings for A/B testing (e.g., [{"name":"Creative A", "ad_format":"SINGLE_IMAGE"}])
     """
     # Check required parameters
     if not account_id:
@@ -172,8 +170,6 @@ async def create_campaign(
     if spend_cap is not None:
         params["spend_cap"] = str(spend_cap)
     
-    if ab_test_control_setups:
-        params["ab_test_control_setups"] = json.dumps(ab_test_control_setups)
     
     if special_ad_category_country:
         params["special_ad_category_country"] = special_ad_category_country
