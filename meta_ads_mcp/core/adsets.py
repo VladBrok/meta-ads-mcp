@@ -87,8 +87,6 @@ async def create_adset(
     campaign_id: str = None, 
     name: str = None,
     status: str = "PAUSED",
-    daily_budget = None,
-    lifetime_budget = None,
     targeting: Dict[str, Any] = None,
     optimization_goal: str = None,
     billing_event: str = None,
@@ -111,8 +109,7 @@ async def create_adset(
         campaign_id: Meta Ads campaign ID this ad set belongs to
         name: Ad set name
         status: Initial ad set status (default: PAUSED)
-        daily_budget: Daily budget in account currency (in cents) as a string. DO NOT set if the campaign uses campaign-level budgets - this will cause an API error.
-        lifetime_budget: Lifetime budget in account currency (in cents) as a string. DO NOT set if the campaign uses campaign-level budgets - this will cause an API error.
+        Note: Budgets are managed at the campaign level only. This tool does not accept ad set budgets.
         targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications. 
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
@@ -187,13 +184,6 @@ async def create_adset(
         "billing_event": billing_event,
         "targeting": json.dumps(targeting)  # Properly format as JSON string
     }
-    
-    # Convert budget values to strings if they aren't already
-    if daily_budget is not None:
-        params["daily_budget"] = str(daily_budget)
-    
-    if lifetime_budget is not None:
-        params["lifetime_budget"] = str(lifetime_budget)
     
     # Add other parameters if provided
     if bid_amount is not None:

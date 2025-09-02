@@ -188,16 +188,15 @@ For local installation configuration, authentication options, and advanced techn
      - `campaign_id`: Meta Ads campaign ID this ad set belongs to
      - `name`: Ad set name
      - `status`: Initial ad set status (default: PAUSED)
-     - `daily_budget`: Daily budget in account currency (in cents) as a string
-     - `lifetime_budget`: Lifetime budget in account currency (in cents) as a string
-     - `targeting`: Targeting specifications (e.g., age, location, interests)
-     - `optimization_goal`: Conversion optimization goal (e.g., 'LINK_CLICKS')
-     - `billing_event`: How you're charged (e.g., 'IMPRESSIONS')
-     - `bid_amount`: Bid amount in account currency (in cents)
-     - `bid_strategy`: Bid strategy (e.g., 'LOWEST_COST')
-     - `start_time`, `end_time`: Optional start/end times (ISO 8601)
-     - `access_token` (optional): Meta API access token
+      - `targeting`: Targeting specifications (e.g., age, location, interests)
+      - `optimization_goal`: Conversion optimization goal (e.g., 'LINK_CLICKS')
+      - `billing_event`: How you're charged (e.g., 'IMPRESSIONS')
+      - `bid_amount`: Bid amount in account currency (in cents)
+      - `bid_strategy`: Bid strategy (e.g., 'LOWEST_COST')
+      - `start_time`, `end_time`: Optional start/end times (ISO 8601)
+      - `access_token` (optional): Meta API access token
    - Returns: Confirmation with new ad set details
+   - Note: Budgets are configured at the campaign level only; ad sets do not accept budgets in this MCP.
 
 11. `mcp_meta_ads_get_ads`
     - Get ads for a Meta Ads account with optional filtering
