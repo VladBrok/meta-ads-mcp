@@ -326,7 +326,7 @@ async def update_campaign(
 
 @mcp_server.tool()
 @meta_api_tool
-async def get_complete_campaign_details_deep_TEMPCHANGE(access_token: str = None, account_id: str = None, campaign_id: str = None, name_contains: str = None) -> str:
+async def get_complete_campaign_details_deep(access_token: str = None, account_id: str = None, campaign_id: str = None, name_contains: str = None) -> str:
     """
     Get comprehensive campaign information including campaign details, ad sets, ads, and ad creatives.
     This tool orchestrates multiple API calls to provide a complete view of a campaign's structure.
