@@ -1,6 +1,7 @@
 """Ad Set-related functionality for Meta Ads API."""
 
 import json
+from datetime import datetime
 from typing import Optional, Dict, Any, List
 from .api import meta_api_tool, make_api_request
 from .accounts import get_ad_accounts
@@ -133,7 +134,7 @@ async def create_adset(
         billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS')
         bid_amount: Bid amount in account currency (in cents)
         bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP')
-        start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800')
+        start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). Defaults to today if not provided.
         end_time: End time in ISO 8601 format
         dsa_beneficiary: DSA beneficiary (person/organization benefiting from ads) for European compliance
         dsa_payor: DSA payor (person/organization paying for ads) for European compliance
@@ -192,8 +193,9 @@ async def create_adset(
     if bid_strategy:
         params["bid_strategy"] = bid_strategy
     
-    if start_time:
-        params["start_time"] = start_time
+    if not start_time:
+        start_time = datetime.utcnow().strftime('%Y-%m-%dT00:00:00+0000')
+    params["start_time"] = start_time
     
     if end_time:
         params["end_time"] = end_time
