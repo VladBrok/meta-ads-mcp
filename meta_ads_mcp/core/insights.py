@@ -1,7 +1,7 @@
 """Insights and Reporting functionality for Meta Ads API."""
 
 import json
-from typing import Optional, List
+from typing import Optional, List, Union
 from .api import meta_api_tool, make_api_request
 from .utils import download_image, try_multiple_download_methods, ad_creative_images, create_resource_from_image
 from .campaigns import get_campaigns
@@ -12,21 +12,28 @@ import datetime
 
 @mcp_server.tool()
 @meta_api_tool
-async def get_insights(access_token: str = None, object_id: str = None, 
-                      date_preset: str = "last_30d", breakdown: str = "", 
+async def get_insights(access_token: str = None, object_id: str = None,
+                      date_preset: str = "last_30d", breakdown: str = "",
                       level: str = "ad", limit: int = 10, after: str = "",
-                      campaign_ids: Optional[List[str]] = None) -> str:
+                      campaign_ids: Optional[List[str]] = None,
+                      time_range: Optional[dict] = None,
+                      time_increment: Optional[Union[str, int]] = "all_days") -> str:
     """
     Get performance insights for a campaign, ad set, ad or account.
     
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         object_id: ID of the campaign, ad set, ad or account
-        date_preset: Preset time range string. Options: today, yesterday, this_month, last_month, this_quarter, 
-                    maximum, data_maximum, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d, 
-                    last_week_mon_sun, last_week_sun_sat, last_quarter, last_year, this_week_mon_today, 
-                    this_week_sun_today, this_year
-        breakdown: Optional breakdown dimension. Valid values include:
+        date_preset: Relative time range preset. Default: last_30d. Options:
+                     today, yesterday, this_month, last_month, this_quarter, maximum, data_maximum, last_3d,
+                     last_7d, last_14d, last_28d, last_30d, last_90d, last_week_mon_sun, last_week_sun_sat,
+                     last_quarter, last_year, this_week_mon_today, this_week_sun_today, this_year.
+                     Ignored if time_range is provided.
+        breakdown: Optional breakdown dimension. Accepts a single value or a
+                   comma-separated list (e.g. "publisher_platform,platform_position").
+                   Note: When using "platform_position", you must also include
+                   "publisher_platform" or the API may return an error.
+                   Valid values include:
                    Demographic: age, gender, country, region, dma
                    Platform/Device: device_platform, platform_position, publisher_platform, impression_device
                    Creative Assets: ad_format_asset, body_asset, call_to_action_asset, description_asset, 
@@ -52,7 +59,13 @@ async def get_insights(access_token: str = None, object_id: str = None,
         level: Level of aggregation (ad, adset, campaign, account)
         limit: Maximum number of results to return (default: 10)
         after: Pagination cursor to get the next set of results
-        campaign_ids: internal field, do not use
+        campaign_ids: Internal field, do not use
+        time_range: {"since": "YYYY-MM-DD", "until": "YYYY-MM-DD"}
+                    A single absolute time range. UNIX timestamps are not supported.
+                    When provided, overrides date_preset. Ignored if time_ranges is provided.
+        time_increment: "monthly", "all_days" or integer (1-90)
+                        Default: "all_days". If integer, number of days to slice results.
+                        Ignored if time_ranges is specified.
     Returns:
         JSON response containing insights data
     """
@@ -61,12 +74,21 @@ async def get_insights(access_token: str = None, object_id: str = None,
         
     endpoint = f"{object_id}/insights"
     params = {
-        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,cpc,cpm,ctr,reach,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type",
+        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,cpc,cpm,ctr,reach,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type,date_start,date_stop",
         "level": level,
         "limit": limit
     }
+
+    if time_range:
+        if isinstance(time_range, dict):
+            params["time_range"] = json.dumps(time_range)
+        else:
+            params["time_range"] = time_range
+    else:
+        params["date_preset"] = date_preset
     
-    params["date_preset"] = date_preset
+    if time_increment is not None:
+        params["time_increment"] = time_increment
     
     if breakdown:
         params["breakdowns"] = breakdown
@@ -98,7 +120,11 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
                     maximum, data_maximum, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d, 
                     last_week_mon_sun, last_week_sun_sat, last_quarter, last_year, this_week_mon_today, 
                     this_week_sun_today, this_year
-        breakdown: Optional breakdown dimension. Valid values include:
+        breakdown: Optional breakdown dimension. Accepts a single value or a
+                   comma-separated list (e.g. "publisher_platform,platform_position").
+                   Note: When using "platform_position", you must also include
+                   "publisher_platform" or the API may return an error.
+                   Valid values include:
                    Demographic: age, gender, country, region, dma
                    Platform/Device: device_platform, platform_position, publisher_platform, impression_device
                    Creative Assets: ad_format_asset, body_asset, call_to_action_asset, description_asset, 
