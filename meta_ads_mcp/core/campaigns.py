@@ -339,11 +339,17 @@ async def get_complete_campaign_details_deep(access_token: str = None, account_i
     if not account_id:
         return json.dumps({"error": "account_id is required"})
     
+    if not campaign_id and not (name_contains and name_contains.strip()):
+        return json.dumps({"error": "Either campaign_id or name_contains must be provided"})
+    
     campaign_details = await get_campaign_details(access_token=access_token, account_id=account_id, campaign_id=campaign_id, name_contains=name_contains)
     campaign_data = json.loads(campaign_details)
     
     if "error" in campaign_data:
         return campaign_details
+    
+    if name_contains and ("data" not in campaign_data or not campaign_data.get("data")):
+        return json.dumps({"error": "Campaign not found"})
     
     if name_contains and "data" in campaign_data and len(campaign_data["data"]) > 1:
         campaign_names = [camp.get("name", "Unknown") for camp in campaign_data["data"]]
@@ -351,7 +357,6 @@ async def get_complete_campaign_details_deep(access_token: str = None, account_i
             "error": f"Search returned {len(campaign_data['data'])} campaigns instead of 1. Found campaigns: {', '.join(campaign_names)}. Please refine your search to target a single campaign."
         })
     
-    # Extract campaign info
     if name_contains and "data" in campaign_data and campaign_data["data"]:
         actual_campaign = campaign_data["data"][0]
         actual_campaign_id = actual_campaign["id"]
@@ -360,7 +365,7 @@ async def get_complete_campaign_details_deep(access_token: str = None, account_i
         if "data" not in campaign_data:
             campaign_data = {"data": [campaign_data]}
     else:
-        return json.dumps({"error": "Either campaign_id or name_contains must be provided"})
+        return json.dumps({"error": "Campaign not found"})
     
     result = {
         "campaign": campaign_data,
