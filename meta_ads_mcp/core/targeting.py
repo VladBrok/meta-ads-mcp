@@ -37,6 +37,78 @@ async def search_interests(access_token: str = None, query: str = None, limit: i
 
 @mcp_server.tool()
 @meta_api_tool
+async def get_audience_reach_estimation(
+    access_token: str = None,
+    account_id: str = None,
+    targeting_spec: Dict[str, Any] = None
+) -> str:
+    """
+    Get audience reach estimation for a given targeting spec using Meta's reachestimate endpoint.
+    Args:
+        access_token: Meta API access token (optional - will use cached token if not provided)
+        account_id: Meta Ads account ID (format: act_XXXXXXXXX)
+        targeting_spec: Complete targeting specification as a single dictionary object.
+                        Do not pass individual targeting fields separately. Use this
+                        field to include all targeting parameters in one object.
+
+                        Key parameters you can include:
+                        - age_min: Minimum age (13-65, defaults to 18)
+                        - age_max: Maximum age (13-65, must be 65 or lower)
+                        - genders: Array for specific genders (1=males, 2=females; omit for all)
+                        - locales: Array of language locale IDs (numeric)
+                        - geo_locations.cities: Array of city objects with fields:
+                          * key: City identifier from Meta's database
+                          * radius: Distance around city (10-50 miles or 17-80 kilometers)
+                          * distance_unit: "mile" or "kilometer"
+                          * Limit: 250 cities maximum
+                        - geo_locations.location_types: Commonly ["home", "recent"]
+                        - publisher_platforms: ["facebook", "instagram", "audience_network", "messenger"]
+                        - facebook_positions: e.g. ["feed", "profile_feed", "story"]
+                        - device_platforms: ["mobile", "desktop"]
+
+                        Example (adapt to your needs):
+                        {
+                          "age_min": 18,
+                          "age_max": 65,
+                          "geo_locations": {
+                            "cities": [
+                              {"country": "NL", "key": "1650778", "name": "Goes", "radius": 19, "distance_unit": "mile"},
+                              {"country": "NL", "key": "1655099", "name": "Sittard", "radius": 19, "distance_unit": "mile"},
+                              {"country": "NL", "key": "1655643", "name": "Tilburg", "radius": 19, "distance_unit": "mile"}
+                            ],
+                            "location_types": ["home", "recent"]
+                          },
+                          "locales": [14],
+                          "publisher_platforms": ["facebook"],
+                          "facebook_positions": ["feed", "profile_feed"],
+                          "device_platforms": ["mobile", "desktop"]
+                        }
+
+    Returns:
+        JSON response from the Graph API reachestimate endpoint. Typical fields include:
+        - users_lower_bound
+        - users_upper_bound
+        - estimate_ready
+    """
+    if not account_id:
+        return json.dumps({"error": "No account ID provided"})
+
+    if targeting_spec is None:
+        return json.dumps({"error": "No targeting_spec provided"})
+
+    endpoint = f"{account_id}/reachestimate"
+
+    encoded_targeting = json.dumps(targeting_spec) if isinstance(targeting_spec, dict) else targeting_spec
+
+    params = {
+        "targeting_spec": encoded_targeting
+    }
+
+    data = await make_api_request(endpoint, access_token, params, method="GET")
+    return json.dumps(data)
+
+@mcp_server.tool()
+@meta_api_tool
 async def get_interest_suggestions(access_token: str = None, interest_list: List[str] = None, limit: int = 25) -> str:
     """
     Get interest suggestions based on existing interests.
