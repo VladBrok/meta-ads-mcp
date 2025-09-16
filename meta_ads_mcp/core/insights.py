@@ -217,37 +217,33 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
             
         if account_id:
             try:
-                # Get all campaigns first
-                all_campaigns_active = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="ACTIVE")
-                all_campaigns_paused = await get_campaigns(access_token=access_token, account_id=account_id, limit=1000, status_filter="PAUSED")
-                
-                active_campaigns_data = json.loads(all_campaigns_active)
-                paused_campaigns_data = json.loads(all_campaigns_paused)
-                
-                # Filter by campaign_ids if provided
-                if campaign_ids is not None:
+                campaigns_endpoint = f"{account_id}/campaigns"
+                campaigns_params = {
+                    "fields": "id,status",
+                    "effective_status": json.dumps(["ACTIVE", "PAUSED"]),
+                    "limit": 1000
+                }
+
+                campaigns_data = await make_api_request(campaigns_endpoint, access_token, campaigns_params)
+
+                if isinstance(campaigns_data, dict) and 'data' in campaigns_data and isinstance(campaigns_data['data'], list):
                     active_count = 0
                     paused_count = 0
-                    
-                    if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
-                        for campaign in active_campaigns_data['data']:
-                            if campaign.get('id') in campaign_ids:
-                                active_count += 1
-                    
-                    if 'data' in paused_campaigns_data and isinstance(paused_campaigns_data['data'], list):
-                        for campaign in paused_campaigns_data['data']:
-                            if campaign.get('id') in campaign_ids:
-                                paused_count += 1
-                    
+
+                    for campaign in campaigns_data['data']:
+                        campaign_id = campaign.get('id')
+                        campaign_status = campaign.get('status')
+
+                        if campaign_ids is not None and campaign_id not in campaign_ids:
+                            continue
+
+                        if campaign_status == 'ACTIVE':
+                            active_count += 1
+                        elif campaign_status == 'PAUSED':
+                            paused_count += 1
+
                     aggregated_results['active_campaigns'] = active_count
                     aggregated_results['paused_campaigns'] = paused_count
-                else:
-                    # No filtering, return all campaigns
-                    if 'data' in active_campaigns_data and isinstance(active_campaigns_data['data'], list):
-                        aggregated_results['active_campaigns'] = len(active_campaigns_data['data'])
-                    
-                    if 'data' in paused_campaigns_data and isinstance(paused_campaigns_data['data'], list):
-                        aggregated_results['paused_campaigns'] = len(paused_campaigns_data['data'])
                         
             except Exception as e:
                 import traceback
@@ -261,7 +257,6 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
         
         return json.dumps(aggregated_results)
     else:
-        # Return error or empty result
         if isinstance(data, dict) and 'error' in data:
             return json.dumps(data)
         else:
