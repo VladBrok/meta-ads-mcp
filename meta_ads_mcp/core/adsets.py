@@ -218,16 +218,25 @@ async def create_adset(
     # Add attribution spec if provided
     if attribution_spec:
         params["attribution_spec"] = json.dumps(attribution_spec)
-    
-    data = await make_api_request(endpoint, access_token, params, method="POST")
-    return json.dumps(data)
+
+    try:
+        data = await make_api_request(endpoint, access_token, params, method="POST")
+        return json.dumps(data)
+    except Exception as e:
+        return json.dumps({
+            "error": "Failed to create ad set",
+            "details": str(e),
+            "params_sent": params
+        })
 
 
 @mcp_server.tool()
 @meta_api_tool
-async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, Any]] = None, bid_strategy: str = None, 
-                        bid_amount: int = None, status: str = None, targeting: Dict[str, Any] = None, 
-                        optimization_goal: str = None, daily_budget = None, lifetime_budget = None, 
+async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, Any]] = None, bid_strategy: str = None,
+                        bid_amount: int = None, status: str = None, targeting: Dict[str, Any] = None,
+                        optimization_goal: str = None, daily_budget = None, lifetime_budget = None,
+                        start_time: str = None, end_time: str = None,
+                        attribution_spec: List[Dict[str, Any]] = None,
                         access_token: str = None) -> str:
     """
     Update an ad set with new settings including frequency caps and budgets.
@@ -244,6 +253,10 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
         optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', etc.)
         daily_budget: Daily budget in account currency (in cents) as a string
         lifetime_budget: Lifetime budget in account currency (in cents) as a string
+        start_time: Update start time in ISO 8601 format (ONLY editable before delivery begins)
+        end_time: Update end time in ISO 8601 format (editable anytime, must be in future)
+        attribution_spec: Attribution tracking configuration, list of dicts
+                         Example: [{"event_type": "CLICK_THROUGH", "window_days": 7}]
         access_token: Meta API access token (optional - will use cached token if not provided)
     """
     if not adset_id:
@@ -276,10 +289,20 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
     # Add budget parameters if provided
     if daily_budget is not None:
         params['daily_budget'] = str(daily_budget)
-    
+
     if lifetime_budget is not None:
         params['lifetime_budget'] = str(lifetime_budget)
-    
+
+    # Add scheduling parameters if provided
+    if start_time is not None:
+        params['start_time'] = start_time
+    if end_time is not None:
+        params['end_time'] = end_time
+
+    # Add attribution spec if provided
+    if attribution_spec is not None:
+        params['attribution_spec'] = json.dumps(attribution_spec)
+
     if not params:
         return json.dumps({"error": "No update parameters provided"})
 
@@ -288,6 +311,15 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
     try:
         # Use POST method for updates as per Meta API documentation
         data = await make_api_request(endpoint, access_token, params, method="POST")
+
+        # Ensure adset_id is included in the response
+        data["adset_id"] = adset_id
+
+        # Fetch adset details to ensure name is included in response
+        adset_details = await make_api_request(adset_id, access_token, {"fields": "name"})
+        if "name" in adset_details:
+            data["name"] = adset_details["name"]
+
         return json.dumps(data)
     except Exception as e:
         error_msg = str(e)

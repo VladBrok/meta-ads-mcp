@@ -542,9 +542,20 @@ async def update_ad(
     endpoint = f"{ad_id}"
     try:
         data = await make_api_request(endpoint, access_token, params, method='POST')
+
+        data["ad_id"] = ad_id
+
+        ad_details = await make_api_request(ad_id, access_token, {"fields": "name"})
+        if "name" in ad_details:
+            data["name"] = ad_details["name"]
+
         return json.dumps(data)
     except Exception as e:
-        return json.dumps({"error": f"Failed to update ad: {str(e)}"})
+        return json.dumps({
+            "error": "Failed to update ad",
+            "details": str(e),
+            "params_sent": params
+        })
 
 
 @mcp_server.tool()
@@ -795,15 +806,19 @@ async def update_ad_creative(
     try:
         # Make API request to update the creative
         data = await make_api_request(endpoint, access_token, update_data, method="POST")
-        
+
         # If successful, get more details about the updated creative
         if "id" in data:
             creative_endpoint = f"{creative_id}"
             creative_params = {
                 "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,url_tags,link_url"
             }
-            
+
             creative_details = await make_api_request(creative_endpoint, access_token, creative_params)
+
+            if "id" not in creative_details:
+                creative_details["id"] = creative_id
+
             return json.dumps({
                 "success": True,
                 "creative_id": creative_id,
