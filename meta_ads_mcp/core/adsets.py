@@ -245,18 +245,39 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
         adset_id: Meta Ads ad set ID
         frequency_control_specs: List of frequency control specifications 
                                  (e.g. [{"event": "IMPRESSIONS", "interval_days": 7, "max_frequency": 3}])
-        bid_strategy: Bid strategy (e.g., 'LOWEST_COST_WITH_BID_CAP')
-        bid_amount: Bid amount in account currency (in cents for USD)
+        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP')
+        bid_amount: Bid amount in account currency (in cents)
         status: Update ad set status (ACTIVE, PAUSED, etc.)
-        targeting: Complete targeting specifications (will replace existing targeting)
-                  (e.g. {"targeting_automation":{"advantage_audience":1}, "geo_locations": {"countries": ["US"]}})
-        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', etc.)
+        targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications.
+                  Do not pass individual targeting fields as separate parameters.
+                  Use targeting_automation.advantage_audience=1 for automatic audience finding.
+                  Note: Advanced targeting features are NOT supported. This will REPLACE existing targeting.
+                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
+                  Key targeting parameters to include in the single object:
+                  - age_min: Minimum age (13-65, defaults to 18)
+                  - age_max: Maximum age (13-65, must be 65 or lower)
+                  - genders: Array targeting specific genders (1=males, 2=females, omit for all)
+                  - locales: Array of language locale IDs (numeric). Target users with specific languages
+                  - geo_locations.cities: Array of city targeting objects with required fields:
+                    * key: City identifier from Meta's location database
+                    * radius: Distance around city (10-50 miles or 17-80 kilometers)
+                    * distance_unit: "mile" or "kilometer"
+                    * Limit: 250 cities maximum
+                  - geo_locations.location_types: Must be ["home", "recent"] if specified
+                  - publisher_platforms: Platforms to show ads on (facebook, instagram, audience_network, messenger)
+                  - facebook_positions: Facebook ad placement positions
+                  - device_platforms: Target devices (mobile, desktop)
+        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', 'OFFSITE_CONVERSIONS', 'QUALITY_LEAD', 'PAGE_LIKES' etc.)
         daily_budget: Daily budget in account currency (in cents) as a string
         lifetime_budget: Lifetime budget in account currency (in cents) as a string
-        start_time: Update start time in ISO 8601 format (ONLY editable before delivery begins)
-        end_time: Update end time in ISO 8601 format (editable anytime, must be in future)
-        attribution_spec: Attribution tracking configuration, list of dicts
-                         Example: [{"event_type": "CLICK_THROUGH", "window_days": 7}]
+        start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). ONLY editable before delivery begins.
+        end_time: End time in ISO 8601 format. Editable anytime, must be in future.
+        attribution_spec: Pass 'attribution_spec' as a list of dictionary objects for conversion tracking.
+                         Do not pass event_type, window_days, etc. as separate parameters.
+                         Example format (use your own values): [{"event_type": "CLICK_THROUGH", "window_days": 7}, {"event_type": "VIEW_THROUGH", "window_days": 1}]
+                         Each dictionary object must contain:
+                         - event_type: Attribution event type (CLICK_THROUGH, VIEW_THROUGH)
+                         - window_days: Attribution window in days (1-28)
         access_token: Meta API access token (optional - will use cached token if not provided)
     """
     if not adset_id:

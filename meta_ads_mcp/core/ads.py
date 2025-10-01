@@ -515,9 +515,10 @@ async def update_ad(
     
     Args:
         ad_id: Meta Ads ad ID
-        status: Update ad status (ACTIVE, PAUSED, etc.)
-        bid_amount: Bid amount in account currency (in cents for USD)
+        status: Ad status (e.g., ACTIVE, PAUSED, etc.)
+        bid_amount: Optional bid amount in account currency (in cents)
         tracking_specs: Optional tracking specifications (e.g., for pixel events).
+                      Example: [{"action.type":"offsite_conversion","fb_pixel":["YOUR_PIXEL_ID"]}]
         creative_id: ID of the creative to associate with this ad (changes the ad's image/content)
         access_token: Meta API access token (optional - will use cached token if not provided)
     """
@@ -758,11 +759,11 @@ async def update_ad_creative(
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         creative_id: Meta Ads creative ID to update
-        name: New creative name
-        message: New ad copy/text
-        headline: New headline for the ad
-        description: New description for the ad
-        call_to_action_type: New call to action button type
+        name: Creative name
+        message: Ad copy/text
+        headline: Single headline for the ad
+        description: Single description for the ad
+        call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
     
     Returns:
         JSON response with updated creative details

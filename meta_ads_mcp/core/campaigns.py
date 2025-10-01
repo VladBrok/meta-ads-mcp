@@ -213,18 +213,21 @@ async def update_campaign(
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         campaign_id: Meta Ads campaign ID (required)
-        name: New campaign name
-        status: New campaign status (e.g., 'ACTIVE', 'PAUSED')
+        name: Campaign name
+        status: Campaign status (e.g., 'ACTIVE', 'PAUSED')
         special_ad_categories: List of special ad categories if applicable
-        daily_budget: New daily budget in account currency (in cents) as a string. 
+        daily_budget: Daily budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
                      Set to empty string "" to remove the daily budget.
-        lifetime_budget: New lifetime budget in account currency (in cents) as a string.
+        lifetime_budget: Lifetime budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
                         Set to empty string "" to remove the lifetime budget.
-        bid_strategy: New bid strategy
-        bid_cap: New bid cap in account currency (in cents) as a string
-        spend_cap: New spending limit for the campaign in account currency (in cents) as a string
-        campaign_budget_optimization: Enable/disable campaign budget optimization
-        objective: New campaign objective (Note: May not always be updatable)
+        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP', 'COST_CAP', 'LOWEST_COST_WITHOUT_CAP')
+        bid_cap: Bid cap in account currency (in cents) as a string
+        spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
+        campaign_budget_optimization: Whether to enable campaign budget optimization.
+        objective: Campaign objective (outcome-based). Must be one of:
+                   OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT,
+                   OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_APP_PROMOTION.
+                   Note: May not always be updatable
         use_adset_level_budgets: If True, removes campaign-level budgets to switch to ad set level budgets
     """
     if not campaign_id:
