@@ -8,6 +8,7 @@ from .campaigns import get_campaigns
 from .server import mcp_server
 import base64
 import datetime
+import asyncio
 
 
 @mcp_server.tool()
@@ -20,7 +21,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
                       time_increment: Optional[Union[str, int]] = "all_days") -> str:
     """
     Get performance insights for a campaign, ad set, ad or account.
-    
+
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         object_id: ID of the campaign, ad set, ad or account
@@ -36,7 +37,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
                    Valid values include:
                    Demographic: age, gender, country, region, dma
                    Platform/Device: device_platform, platform_position, publisher_platform, impression_device
-                   Creative Assets: ad_format_asset, body_asset, call_to_action_asset, description_asset, 
+                   Creative Assets: ad_format_asset, body_asset, call_to_action_asset, description_asset,
                                   image_asset, link_url_asset, title_asset, video_asset, media_asset_url,
                                   media_creator, media_destination_url, media_format, media_origin_url,
                                   media_text_content, media_type, creative_relaxation_asset_type,
@@ -44,11 +45,11 @@ async def get_insights(access_token: str = None, object_id: str = None,
                    Campaign/Ad Attributes: breakdown_ad_objective, breakdown_reporting_ad_id, app_id, product_id
                    Conversion Tracking: coarse_conversion_value, conversion_destination, standard_event_content_type,
                                        signal_source_bucket, is_conversion_id_modeled, fidelity_type, redownload
-                   Time-based: hourly_stats_aggregated_by_advertiser_time_zone, 
+                   Time-based: hourly_stats_aggregated_by_advertiser_time_zone,
                               hourly_stats_aggregated_by_audience_time_zone, frequency_value
-                   Extensions/Landing: ad_extension_domain, ad_extension_url, landing_destination, 
+                   Extensions/Landing: ad_extension_domain, ad_extension_url, landing_destination,
                                       mdsa_landing_destination
-                   Attribution: sot_attribution_model_type, sot_attribution_window, sot_channel, 
+                   Attribution: sot_attribution_model_type, sot_attribution_window, sot_channel,
                                sot_event_type, sot_source
                    Mobile/SKAN: skan_campaign_id, skan_conversion_id, skan_version, postback_sequence_index
                    CRM/Business: crm_advertiser_l12_territory_ids, crm_advertiser_subvertical_id,
@@ -71,7 +72,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
     """
     if not object_id:
         return json.dumps({"error": "No object ID provided"})
-        
+
     endpoint = f"{object_id}/insights"
     params = {
         "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,cpc,cpm,ctr,reach,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type,date_start,date_stop",
@@ -86,39 +87,39 @@ async def get_insights(access_token: str = None, object_id: str = None,
             params["time_range"] = time_range
     else:
         params["date_preset"] = date_preset
-    
+
     if time_increment is not None:
         params["time_increment"] = time_increment
-    
+
     if breakdown:
         params["breakdowns"] = breakdown
-    
+
     if campaign_ids is not None:
         filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
         params["filtering"] = json.dumps(filtering)
-    
+
     if after:
         params["after"] = after
-    
+
     data = await make_api_request(endpoint, access_token, params)
-    
+
     return json.dumps(data)
 
 
 @mcp_server.tool()
 @meta_api_tool
-async def get_insights_summary(access_token: str = None, object_id: str = None, 
-                              date_preset: str = "last_30d", breakdown: str = "", 
+async def get_insights_summary(access_token: str = None, object_id: str = None,
+                              date_preset: str = "last_30d", breakdown: str = "",
                               level: str = "ad", campaign_ids: Optional[List[str]] = None) -> str:
     """
     Get aggregated performance summary for a campaign, ad set, ad or account.
-    
+
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         object_id: ID of the campaign, ad set, ad or account
-        date_preset: Preset time range string. Options: today, yesterday, this_month, last_month, this_quarter, 
-                    maximum, data_maximum, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d, 
-                    last_week_mon_sun, last_week_sun_sat, last_quarter, last_year, this_week_mon_today, 
+        date_preset: Preset time range string. Options: today, yesterday, this_month, last_month, this_quarter,
+                    maximum, data_maximum, last_3d, last_7d, last_14d, last_28d, last_30d, last_90d,
+                    last_week_mon_sun, last_week_sun_sat, last_quarter, last_year, this_week_mon_today,
                     this_week_sun_today, this_year
         breakdown: Optional breakdown dimension. Accepts a single value or a
                    comma-separated list (e.g. "publisher_platform,platform_position").
@@ -127,7 +128,7 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
                    Valid values include:
                    Demographic: age, gender, country, region, dma
                    Platform/Device: device_platform, platform_position, publisher_platform, impression_device
-                   Creative Assets: ad_format_asset, body_asset, call_to_action_asset, description_asset, 
+                   Creative Assets: ad_format_asset, body_asset, call_to_action_asset, description_asset,
                                   image_asset, link_url_asset, title_asset, video_asset, media_asset_url,
                                   media_creator, media_destination_url, media_format, media_origin_url,
                                   media_text_content, media_type, creative_relaxation_asset_type,
@@ -135,11 +136,11 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
                    Campaign/Ad Attributes: breakdown_ad_objective, breakdown_reporting_ad_id, app_id, product_id
                    Conversion Tracking: coarse_conversion_value, conversion_destination, standard_event_content_type,
                                        signal_source_bucket, is_conversion_id_modeled, fidelity_type, redownload
-                   Time-based: hourly_stats_aggregated_by_advertiser_time_zone, 
+                   Time-based: hourly_stats_aggregated_by_advertiser_time_zone,
                               hourly_stats_aggregated_by_audience_time_zone, frequency_value
-                   Extensions/Landing: ad_extension_domain, ad_extension_url, landing_destination, 
+                   Extensions/Landing: ad_extension_domain, ad_extension_url, landing_destination,
                                       mdsa_landing_destination
-                   Attribution: sot_attribution_model_type, sot_attribution_window, sot_channel, 
+                   Attribution: sot_attribution_model_type, sot_attribution_window, sot_channel,
                                sot_event_type, sot_source
                    Mobile/SKAN: skan_campaign_id, skan_conversion_id, skan_version, postback_sequence_index
                    CRM/Business: crm_advertiser_l12_territory_ids, crm_advertiser_subvertical_id,
@@ -152,42 +153,42 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
     Returns:
         JSON response containing aggregated summary with:
         - total_spend: Sum of all spend values across all results
-        - total_leads: Sum of all lead actions across all results  
+        - total_leads: Sum of all lead actions across all results
         - active_campaigns: Count of active campaigns (filtered by campaign_ids if provided)
         - paused_campaigns: Count of paused campaigns (filtered by campaign_ids if provided)
     """
     if not object_id:
         return json.dumps({"error": "No object ID provided"})
-        
+
     endpoint = f"{object_id}/insights"
     params = {
         "fields": "account_id,spend,actions",
         "level": level,
-        "limit": 1000  # Get all data for aggregation, no pagination
+        "limit": 1000
     }
-    
+
     params["date_preset"] = date_preset
-    
+
     if breakdown:
         params["breakdowns"] = breakdown
-    
+
     if campaign_ids is not None:
         filtering = [{"field": "campaign.id", "operator": "IN", "value": campaign_ids}]
         params["filtering"] = json.dumps(filtering)
-    
+
     data = await make_api_request(endpoint, access_token, params)
-    
+
     if isinstance(data, dict) and 'data' in data and isinstance(data['data'], list) and 'error' not in data:
         total_spend = 0.0
         total_leads = 0
-        
+
         for record in data['data']:
             if 'spend' in record and record['spend']:
                 try:
                     total_spend += float(record['spend'])
                 except (ValueError, TypeError):
                     pass
-            
+
             if 'actions' in record and isinstance(record['actions'], list):
                 for action in record['actions']:
                     if action.get('action_type') == 'lead' and action.get('value'):
@@ -195,14 +196,14 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
                             total_leads += int(action['value'])
                         except (ValueError, TypeError):
                             pass
-        
+
         aggregated_results = {
             'total_spend': round(total_spend, 2),
             'total_leads': total_leads
         }
-        
+
         account_id = None
-        
+
         if data['data']:
             first_record = data['data'][0]
             raw_account_id = first_record.get('account_id')
@@ -210,11 +211,11 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
                 account_id = f"act_{raw_account_id}"
             else:
                 account_id = raw_account_id
-        
+
         if not account_id and object_id:
             if object_id.startswith('act_'):
                 account_id = object_id
-            
+
         if account_id:
             try:
                 campaigns_endpoint = f"{account_id}/campaigns"
@@ -244,7 +245,7 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
 
                     aggregated_results['active_campaigns'] = active_count
                     aggregated_results['paused_campaigns'] = paused_count
-                        
+
             except Exception as e:
                 import traceback
                 error_details = {
@@ -254,7 +255,7 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
                     'traceback': traceback.format_exc()
                 }
                 aggregated_results['campaign_count_error'] = error_details
-        
+
         return json.dumps(aggregated_results)
     else:
         if isinstance(data, dict) and 'error' in data:
@@ -263,7 +264,25 @@ async def get_insights_summary(access_token: str = None, object_id: str = None,
             return json.dumps({"error": "No valid data received", "raw_response": data})
 
 
+@mcp_server.tool()
+@meta_api_tool
+async def simulate_long_running_request(access_token: str = None) -> str:
+    """
+    Simulates a long-running Meta API request with 3-minute artificial delay.
 
+    Args:
+        access_token: Meta API access token (optional - will use cached token if not provided)
 
+    Returns:
+        JSON response after 3-minute delay
+    """
+    await asyncio.sleep(180)
 
- 
+    simulated_response = {
+        "status": "completed",
+        "message": "Long-running request simulation completed successfully",
+        "execution_time_seconds": 180,
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+    return json.dumps(simulated_response)
