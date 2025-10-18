@@ -680,7 +680,7 @@ async def create_ad_creative(
         description: Single description for the ad (used for image creatives only)
         call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
         instagram_actor_id: Optional Instagram account ID for Instagram placements
-        thumbnail_url: Optional thumbnail image URL for video creatives
+        thumbnail_url: Thumbnail image URL for video creatives (required when video_id is provided)
 
     Returns:
         JSON response with created creative details
