@@ -236,21 +236,23 @@ For local installation configuration, authentication options, and advanced techn
     - Returns: Creative details including text, images, and URLs
 
 15. `mcp_meta_ads_create_ad_creative`
-    - Create a new ad creative using an uploaded image hash
+    - Create a new ad creative using an uploaded image hash or video ID
     - Inputs:
       - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX)
       - `name`: Creative name
-      - `image_hash`: Hash of the uploaded image
+      - `image_hash`: Hash of the uploaded image (mutually exclusive with video_id)
+      - `video_id`: ID of the uploaded video (mutually exclusive with image_hash)
       - `page_id`: Facebook Page ID for the ad
-      - `link_url`: Destination URL
+      - `link_url`: Destination URL (for image creatives only)
       - `message`: Ad copy/text
-      - `headline`: Single headline for simple ads (cannot be used with headlines)
+      - `headline`: Single headline for simple ads (for image creatives only, cannot be used with headlines)
       - `headlines`: List of headlines for dynamic creative testing (cannot be used with headline)
-      - `description`: Single description for simple ads (cannot be used with descriptions)
+      - `description`: Single description for simple ads (for image creatives only, cannot be used with descriptions)
       - `descriptions`: List of descriptions for dynamic creative testing (cannot be used with description)
       - `dynamic_creative_spec`: Dynamic creative optimization settings
       - `call_to_action_type`: CTA button type (e.g., 'LEARN_MORE')
       - `instagram_actor_id`: Optional Instagram account ID
+      - `thumbnail_url`: Optional thumbnail image URL for video creatives
       - `access_token` (optional): Meta API access token
     - Returns: Confirmation with new creative details
 
@@ -269,14 +271,15 @@ For local installation configuration, authentication options, and advanced techn
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
     - Returns: Confirmation with updated creative details
 
-17. `mcp_meta_ads_upload_ad_image`
-    - Upload an image to use in Meta Ads creatives
+17. `mcp_meta_ads_upload_ad_media`
+    - Upload an image or video to use in Meta Ads creatives
     - Inputs:
       - `account_id`: Meta Ads account ID (format: act_XXXXXXXXX)
-      - `image_path`: Path to the image file to upload
-      - `name`: Optional name for the image
+      - `media_path`: Path to the media file (image or video) to upload
+      - `name`: Optional name for the media file
+      - `media_type`: Type of media - "IMAGE" or "VIDEO" (default: "IMAGE", invalid values fallback to "IMAGE")
       - `access_token` (optional): Meta API access token
-    - Returns: JSON response with image details including hash
+    - Returns: JSON response with media details including hash (for images) or video_id (for videos)
 
 18. `mcp_meta_ads_get_ad_image`
     - Get, download, and visualize a Meta ad image in one step

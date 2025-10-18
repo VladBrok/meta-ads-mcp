@@ -8,7 +8,7 @@ from mcp.server.fastmcp import Image
 import os
 import time
 
-from .api import meta_api_tool, make_api_request, make_batch_api_request
+from .api import meta_api_tool, make_api_request, make_batch_api_request, make_api_request_with_file
 from .accounts import get_ad_accounts
 from .utils import download_image, try_multiple_download_methods, ad_creative_images, extract_creative_image_urls
 from .server import mcp_server
@@ -561,70 +561,88 @@ async def update_ad(
 
 @mcp_server.tool()
 @meta_api_tool
-async def upload_ad_image(
+async def upload_ad_media(
     access_token: str = None,
     account_id: str = None,
-    image_path: str = None,
-    name: str = None
+    media_path: str = None,
+    name: str = None,
+    media_type: str = "IMAGE"
 ) -> str:
     """
-    Upload an image to use in Meta Ads creatives.
-    
+    Upload an image or video to use in Meta Ads creatives.
+
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
-        image_path: Path to the image file to upload, or URL to download from
-        name: Optional name for the image (default: filename)
-    
+        media_path: Path to the media file (image or video) to upload
+        name: Optional name for the media file (default: filename)
+        media_type: Type of media to upload - "IMAGE" or "VIDEO" (default: "IMAGE", invalid values fallback to "IMAGE")
+
     Returns:
-        JSON response with image details including hash for creative creation
+        JSON response with media details including hash (for images) or video_id (for videos) for creative creation
     """
-    # Check required parameters
     if not account_id:
         return json.dumps({"error": "No account ID provided"})
-    
-    if not image_path:
-        return json.dumps({"error": "No image path provided"})
-    
-    # Ensure account_id has the 'act_' prefix for API compatibility
+
+    if not media_path:
+        return json.dumps({"error": "No media path provided"})
+
+    if not os.path.exists(media_path):
+        return json.dumps({"error": f"Media file not found: {media_path}"})
+
+    if media_type.upper() not in ["IMAGE", "VIDEO"]:
+        media_type = "IMAGE"
+    else:
+        media_type = media_type.upper()
+
     if not account_id.startswith("act_"):
         account_id = f"act_{account_id}"
     
-    # Check if image file exists
-    if not os.path.exists(image_path):
-        return json.dumps({"error": f"Image file not found: {image_path}"})
-    
     try:
-        # Read image file
-        with open(image_path, "rb") as img_file:
-            image_bytes = img_file.read()
-        
-        # Get image filename if name not provided
         if not name:
-            name = os.path.basename(image_path)
-        
-        # Prepare the API endpoint for uploading images
-        endpoint = f"{account_id}/adimages"
-        
-        # We need to convert the binary data to base64 for API upload
-        import base64
-        encoded_image = base64.b64encode(image_bytes).decode('utf-8')
-        
-        # Prepare POST parameters
-        params = {
-            "bytes": encoded_image,
-            "name": name
-        }
-        
-        # Make API request to upload the image
-        print(f"Uploading image to Facebook Ad Account {account_id}")
-        data = await make_api_request(endpoint, access_token, params, method="POST")
-        
-        return json.dumps(data)
+            name = os.path.basename(media_path)
+
+        if media_type == "IMAGE":
+            with open(media_path, "rb") as media_file:
+                media_bytes = media_file.read()
+
+            import base64
+            encoded_media = base64.b64encode(media_bytes).decode('utf-8')
+
+            endpoint = f"{account_id}/adimages"
+            params = {
+                "bytes": encoded_media,
+                "name": name
+            }
+            print(f"Uploading image to Facebook Ad Account {account_id}")
+
+            data = await make_api_request(endpoint, access_token, params, method="POST")
+            return json.dumps(data)
+        else:
+            endpoint = f"{account_id}/advideos"
+            print(f"Uploading video to Facebook Ad Account {account_id}")
+
+            additional_params = {}
+            if name:
+                additional_params["title"] = name
+
+            data = await make_api_request_with_file(endpoint, access_token, media_path, additional_params)
+
+            if "error" in data:
+                return json.dumps(data)
+
+            if "id" in data:
+                return json.dumps({
+                    "success": True,
+                    "video_id": data["id"],
+                    "details": data
+                })
+
+            return json.dumps(data)
     
     except Exception as e:
         return json.dumps({
-            "error": "Failed to upload image",
+            "error": f"Failed to upload {media_type.lower()}",
             "details": str(e)
         })
 
@@ -636,39 +654,45 @@ async def create_ad_creative(
     account_id: str = None,
     name: str = None,
     image_hash: str = None,
+    video_id: str = None,
     page_id: str = None,
     link_url: str = None,
     message: str = None,
     headline: str = None,
     description: str = None,
     call_to_action_type: str = None,
-    instagram_actor_id: str = None
+    instagram_actor_id: str = None,
+    thumbnail_url: str = None
 ) -> str:
     """
-    Create a new ad creative using an uploaded image hash.
-    
+    Create a new ad creative using an uploaded image hash or video ID.
+
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
         name: Creative name
-        image_hash: Hash of the uploaded image
+        image_hash: Hash of the uploaded image (mutually exclusive with video_id)
+        video_id: ID of the uploaded video (mutually exclusive with image_hash)
         page_id: Facebook Page ID to be used for the ad
-        link_url: Destination URL for the ad
+        link_url: Destination URL for the ad (used for image creatives only)
         message: Ad copy/text
-        headline: Single headline for the ad
-        description: Single description for the ad
+        headline: Single headline for the ad (used for image creatives only)
+        description: Single description for the ad (used for image creatives only)
         call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
         instagram_actor_id: Optional Instagram account ID for Instagram placements
-    
+        thumbnail_url: Optional thumbnail image URL for video creatives
+
     Returns:
         JSON response with created creative details
     """
-    # Check required parameters
     if not account_id:
         return json.dumps({"error": "No account ID provided"})
-    
-    if not image_hash:
-        return json.dumps({"error": "No image hash provided"})
+
+    if not image_hash and not video_id:
+        return json.dumps({"error": "Either image_hash or video_id must be provided"})
+
+    if image_hash and video_id:
+        return json.dumps({"error": "Cannot provide both image_hash and video_id - they are mutually exclusive"})
     
     if not name:
         name = f"Creative {int(time.time())}"
@@ -677,35 +701,52 @@ async def create_ad_creative(
     if not account_id.startswith("act_"):
         account_id = f"act_{account_id}"
     
-    # Prepare the creative data
     creative_data = {
         "name": name
     }
-    
-    # Use traditional object_story_spec for non-dynamic creative
-    creative_data["object_story_spec"] = {
-        "page_id": page_id,
-        "link_data": {
-            "image_hash": image_hash,
-            "link": link_url if link_url else "https://facebook.com"
+
+    if video_id:
+        video_data = {
+            "video_id": video_id
         }
-    }
-    
-    # Add optional parameters if provided
-    if message:
-        creative_data["object_story_spec"]["link_data"]["message"] = message
-        
-    if headline:
-        creative_data["object_story_spec"]["link_data"]["name"] = headline
-        
-    if description:
-        creative_data["object_story_spec"]["link_data"]["description"] = description
-    
-    # Add call_to_action to object_story_spec if provided
-    if call_to_action_type:
-        creative_data["object_story_spec"]["link_data"]["call_to_action"] = {
-            "type": call_to_action_type
+
+        if thumbnail_url:
+            video_data["image_url"] = thumbnail_url
+
+        creative_data["object_story_spec"] = {
+            "page_id": page_id,
+            "video_data": video_data
         }
+
+        if message:
+            creative_data["object_story_spec"]["video_data"]["message"] = message
+
+        if call_to_action_type:
+            creative_data["object_story_spec"]["video_data"]["call_to_action"] = {
+                "type": call_to_action_type
+            }
+    else:
+        creative_data["object_story_spec"] = {
+            "page_id": page_id,
+            "link_data": {
+                "image_hash": image_hash,
+                "link": link_url if link_url else "https://facebook.com"
+            }
+        }
+
+        if message:
+            creative_data["object_story_spec"]["link_data"]["message"] = message
+
+        if headline:
+            creative_data["object_story_spec"]["link_data"]["name"] = headline
+
+        if description:
+            creative_data["object_story_spec"]["link_data"]["description"] = description
+
+        if call_to_action_type:
+            creative_data["object_story_spec"]["link_data"]["call_to_action"] = {
+                "type": call_to_action_type
+            }
     
     if instagram_actor_id:
         creative_data["instagram_actor_id"] = instagram_actor_id

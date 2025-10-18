@@ -48,6 +48,92 @@ def filter_paging_next(response_data: Dict[str, Any]) -> Dict[str, Any]:
     return response_data
 
 
+async def make_api_request_with_file(
+    endpoint: str,
+    access_token: str,
+    file_path: str,
+    additional_params: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Make a POST request to the Meta Graph API with a file upload.
+
+    Args:
+        endpoint: API endpoint path (without base URL)
+        access_token: Meta API access token
+        file_path: Path to the file to upload
+        additional_params: Additional form parameters
+
+    Returns:
+        API response as a dictionary
+    """
+    if not access_token:
+        logger.error("API request attempted with blank access token")
+        return {
+            "error": {
+                "message": "Authentication Required",
+                "details": "A valid access token is required to access the Meta API",
+                "action_required": "Please authenticate first"
+            }
+        }
+
+    url = f"{META_GRAPH_API_BASE}/{endpoint}"
+
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    async with httpx.AsyncClient(timeout=300.0) as client:
+        try:
+            with open(file_path, 'rb') as f:
+                files = {'source': (os.path.basename(file_path), f, 'video/mp4')}
+                data = additional_params or {}
+
+                response = await client.post(url, files=files, data=data, headers=headers)
+
+            response.raise_for_status()
+            logger.debug(f"API Response status: {response.status_code}")
+
+            try:
+                response_data = response.json()
+                return filter_paging_next(response_data)
+            except json.JSONDecodeError:
+                return {
+                    "text_response": response.text,
+                    "status_code": response.status_code
+                }
+
+        except httpx.HTTPStatusError as e:
+            error_info = {}
+            try:
+                error_info = e.response.json()
+            except:
+                error_info = {"status_code": e.response.status_code, "text": e.response.text}
+
+            logger.error(f"HTTP Error: {e.response.status_code} - {error_info}")
+
+            full_response = {
+                "headers": dict(e.response.headers),
+                "status_code": e.response.status_code,
+                "url": str(e.response.url),
+                "reason": getattr(e.response, "reason_phrase", "Unknown reason"),
+                "request_method": e.request.method,
+                "request_url": str(e.request.url)
+            }
+
+            return {
+                "error": {
+                    "message": f"HTTP Error: {e.response.status_code}",
+                    "details": error_info,
+                    "full_response": full_response
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"Request Error: {str(e)}")
+            return {"error": {"message": str(e)}}
+
+
 async def make_api_request(
     endpoint: str,
     access_token: str,
@@ -56,13 +142,13 @@ async def make_api_request(
 ) -> Dict[str, Any]:
     """
     Make a request to the Meta Graph API.
-    
+
     Args:
         endpoint: API endpoint path (without base URL)
         access_token: Meta API access token
         params: Additional query parameters
         method: HTTP method (GET, POST, DELETE)
-    
+
     Returns:
         API response as a dictionary
     """
