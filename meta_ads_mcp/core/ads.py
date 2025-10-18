@@ -674,10 +674,10 @@ async def create_ad_creative(
         image_hash: Hash of the uploaded image (mutually exclusive with video_id)
         video_id: ID of the uploaded video (mutually exclusive with image_hash)
         page_id: Facebook Page ID to be used for the ad
-        link_url: Destination URL for the ad (used for image creatives only)
+        link_url: Destination URL for the ad
         message: Ad copy/text
-        headline: Single headline for the ad (used for image creatives only)
-        description: Single description for the ad (used for image creatives only)
+        headline: Single headline for the ad
+        description: Description text
         call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
         instagram_actor_id: Optional Instagram account ID for Instagram placements
         thumbnail_url: Thumbnail image URL for video creatives (required when video_id is provided)
@@ -713,18 +713,29 @@ async def create_ad_creative(
         if thumbnail_url:
             video_data["image_url"] = thumbnail_url
 
+        if message:
+            video_data["message"] = message
+
+        if headline:
+            video_data["title"] = headline
+
+        if description:
+            video_data["link_description"] = description
+
+        if call_to_action_type:
+            call_to_action_data = {
+                "type": call_to_action_type
+            }
+            if link_url:
+                call_to_action_data["value"] = {
+                    "link": link_url
+                }
+            video_data["call_to_action"] = call_to_action_data
+
         creative_data["object_story_spec"] = {
             "page_id": page_id,
             "video_data": video_data
         }
-
-        if message:
-            creative_data["object_story_spec"]["video_data"]["message"] = message
-
-        if call_to_action_type:
-            creative_data["object_story_spec"]["video_data"]["call_to_action"] = {
-                "type": call_to_action_type
-            }
     else:
         creative_data["object_story_spec"] = {
             "page_id": page_id,

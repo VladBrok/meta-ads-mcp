@@ -130,8 +130,8 @@ async def create_adset(
                   - publisher_platforms: Platforms to show ads on (facebook, instagram, audience_network, messenger)
                   - facebook_positions: Facebook ad placement positions
                   - device_platforms: Target devices (mobile, desktop)
-        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', 'OFFSITE_CONVERSIONS', 'QUALITY_LEAD', 'PAGE_LIKES' etc.)
-        billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS')
+        optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
+        billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS', 'OFFER_CLAIMS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'VIDEO_VIEWS', 'THRUPLAY')
         bid_amount: Bid amount in account currency (in cents)
         bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP')
         start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). Defaults to today if not provided.
@@ -267,7 +267,7 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
                   - publisher_platforms: Platforms to show ads on (facebook, instagram, audience_network, messenger)
                   - facebook_positions: Facebook ad placement positions
                   - device_platforms: Target devices (mobile, desktop)
-        optimization_goal: Conversion optimization goal (e.g., 'LEAD_GENERATION', 'LINK_CLICKS', 'REACH', 'IMPRESSIONS', 'LANDING_PAGE_VIEWS', 'OFFSITE_CONVERSIONS', 'QUALITY_LEAD', 'PAGE_LIKES' etc.)
+        optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
         daily_budget: Daily budget in account currency (in cents) as a string
         lifetime_budget: Lifetime budget in account currency (in cents) as a string
         start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). ONLY editable before delivery begins.

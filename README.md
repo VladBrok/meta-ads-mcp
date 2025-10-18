@@ -189,8 +189,8 @@ For local installation configuration, authentication options, and advanced techn
      - `name`: Ad set name
      - `status`: Initial ad set status (default: PAUSED)
       - `targeting`: Targeting specifications (e.g., age, location, interests)
-      - `optimization_goal`: Conversion optimization goal (e.g., 'LINK_CLICKS')
-      - `billing_event`: How you're charged (e.g., 'IMPRESSIONS')
+      - `optimization_goal`: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
+      - `billing_event`: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS', 'OFFER_CLAIMS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'VIDEO_VIEWS', 'THRUPLAY')
       - `bid_amount`: Bid amount in account currency (in cents)
       - `bid_strategy`: Bid strategy (e.g., 'LOWEST_COST')
       - `start_time`, `end_time`: Optional start/end times (ISO 8601)
