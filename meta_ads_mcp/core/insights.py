@@ -75,7 +75,7 @@ async def get_insights(access_token: str = None, object_id: str = None,
 
     endpoint = f"{object_id}/insights"
     params = {
-        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,cpc,cpm,ctr,reach,frequency,actions,action_values,conversions,unique_clicks,cost_per_action_type,date_start,date_stop",
+        "fields": "account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,cpc,cpm,ctr,reach,frequency,actions,conversions,unique_clicks,cost_per_action_type,date_start,date_stop",
         "level": level,
         "limit": limit
     }
@@ -102,6 +102,14 @@ async def get_insights(access_token: str = None, object_id: str = None,
         params["after"] = after
 
     data = await make_api_request(endpoint, access_token, params)
+
+    if isinstance(data, dict) and 'data' in data and not data.get('error'):
+        data['_meta_explanation'] = {
+            "note": "Brief explanation of common fields. Infer other metrics from context and parameter names.",
+            "actions": "Array of conversion events. Each has action_type (e.g., 'link_click', 'landing_page_view', 'lead') and value (count). The 'lead' action_type represents actual lead conversions.",
+            "cost_per_action_type": "Cost per conversion for each action type. Calculated as spend divided by action count. Find action_type: 'lead' here for cost per lead.",
+            "finding_leads": "To get lead count: find action_type: 'lead' in 'actions' array. To get cost per lead: find action_type: 'lead' in 'cost_per_action_type' array. Both may be absent if no leads occurred. Note: 'offsite_content_view_add_meta_leads' is NOT a lead conversion - it tracks content views."
+        }
 
     return json.dumps(data)
 
