@@ -111,11 +111,11 @@ async def create_adset(
         name: Ad set name
         status: Initial ad set status (default: PAUSED)
         Note: Budgets are managed at the campaign level only. This tool does not accept ad set budgets.
-        targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications. 
+        targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications.
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
                   Note: Advanced targeting features are NOT supported.
-                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
+                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook", "instagram"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "instagram_positions": ["stream", "story"], "device_platforms": ["mobile", "desktop"]}
                   Key targeting parameters to include in the single object:
                   - age_min: Minimum age (13-65, defaults to 18)
                   - age_max: Maximum age (13-65, must be 65 or lower)
@@ -127,8 +127,9 @@ async def create_adset(
                     * distance_unit: "mile" or "kilometer"
                     * Limit: 250 cities maximum
                   - geo_locations.location_types: Must be ["home", "recent"] if specified
-                  - publisher_platforms: Platforms to show ads on (facebook, instagram, audience_network, messenger)
-                  - facebook_positions: Facebook ad placement positions
+                  - publisher_platforms: Platforms to show ads on. Can specify facebook only, instagram only, or both (e.g., ["facebook"], ["instagram"], or ["facebook", "instagram"]). Also supports audience_network and messenger.
+                  - facebook_positions: Facebook ad placement positions (feed, groups_feed, profile_feed, story, etc.). Only needed when facebook is in publisher_platforms.
+                  - instagram_positions: Instagram ad placement positions (stream, story, explore, explore_home, reels, profile_feed, ig_search, profile_reels). Only needed when instagram is in publisher_platforms. Optional, defaults to all positions.
                   - device_platforms: Target devices (mobile, desktop)
         optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
         billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS', 'OFFER_CLAIMS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'VIDEO_VIEWS', 'THRUPLAY')
@@ -252,7 +253,7 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
                   Note: Advanced targeting features are NOT supported. This will REPLACE existing targeting.
-                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "device_platforms": ["mobile", "desktop"]}
+                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook", "instagram"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "instagram_positions": ["stream", "story"], "device_platforms": ["mobile", "desktop"]}
                   Key targeting parameters to include in the single object:
                   - age_min: Minimum age (13-65, defaults to 18)
                   - age_max: Maximum age (13-65, must be 65 or lower)
@@ -264,8 +265,9 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
                     * distance_unit: "mile" or "kilometer"
                     * Limit: 250 cities maximum
                   - geo_locations.location_types: Must be ["home", "recent"] if specified
-                  - publisher_platforms: Platforms to show ads on (facebook, instagram, audience_network, messenger)
-                  - facebook_positions: Facebook ad placement positions
+                  - publisher_platforms: Platforms to show ads on. Can specify facebook only, instagram only, or both (e.g., ["facebook"], ["instagram"], or ["facebook", "instagram"]). Also supports audience_network and messenger.
+                  - facebook_positions: Facebook ad placement positions (feed, groups_feed, profile_feed, story, etc.). Only needed when facebook is in publisher_platforms.
+                  - instagram_positions: Instagram ad placement positions (stream, story, explore, explore_home, reels, profile_feed, ig_search, profile_reels). Only needed when instagram is in publisher_platforms. Optional, defaults to all positions.
                   - device_platforms: Target devices (mobile, desktop)
         optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
         daily_budget: Daily budget in account currency (in cents) as a string
