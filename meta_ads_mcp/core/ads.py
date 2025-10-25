@@ -800,68 +800,60 @@ async def update_ad_creative(
     access_token: str = None,
     creative_id: str = None,
     name: str = None,
-    message: str = None,
-    headline: str = None,
-    description: str = None,
-    call_to_action_type: str = None
+    status: str = None,
+    account_id: str = None
 ) -> str:
     """
-    Update an existing ad creative with new content or settings.
-    
+    Update an ad creative's metadata (name, status, or account).
+
+    IMPORTANT: Ad creative content (message, headline, description, images, videos) is IMMUTABLE.
+    According to Meta API documentation, only the following fields can be updated:
+    - name: Creative name in the library
+    - status: Creative status (ACTIVE, PAUSED, DELETED, etc.)
+    - account_id: Ad account ID
+
+    To "update" ad content (message, headline, description):
+    1. Create a NEW creative with the updated content using create_ad_creative()
+    2. Update the AD (not the creative) to reference the new creative using update_ad(creative_id=new_creative_id)
+
+    This is how Meta's system works - creatives are immutable content objects, and ads reference them.
+
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         creative_id: Meta Ads creative ID to update
-        name: Creative name
-        message: Ad copy/text
-        headline: Single headline for the ad
-        description: Single description for the ad
-        call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
-    
+        name: Creative name (up to 100 characters)
+        status: Creative status (ACTIVE, IN_PROCESS, WITH_ISSUES, DELETED)
+        account_id: Ad account ID (format: act_XXXXXXXXX)
+
     Returns:
         JSON response with updated creative details
     """
-    # Check required parameters
     if not creative_id:
         return json.dumps({"error": "No creative ID provided"})
-    
-    # Prepare the update data
+
     update_data = {}
-    
+
     if name:
         update_data["name"] = name
-    
-    # Handle object_story_spec updates
-    object_story_spec_updates = {}
-    link_data_updates = {}
-    
-    if message:
-        link_data_updates["message"] = message
-        
-    if headline:
-        link_data_updates["name"] = headline
-        
-    if description:
-        link_data_updates["description"] = description
-    
-    if call_to_action_type:
-        link_data_updates["call_to_action"] = {
-            "type": call_to_action_type
-        }
-    
-    # Add link_data to object_story_spec if we have any link_data updates
-    if link_data_updates:
-        object_story_spec_updates["link_data"] = link_data_updates
-        update_data["object_story_spec"] = object_story_spec_updates
-    
-    # Prepare the API endpoint for updating the creative
+
+    if status:
+        update_data["status"] = status
+
+    if account_id:
+        update_data["account_id"] = account_id
+
+    if not update_data:
+        return json.dumps({
+            "error": "No update parameters provided",
+            "note": "Only name, status, and account_id can be updated. To change content (message, headline, description), create a new creative and update the ad to use it."
+        })
+
     endpoint = f"{creative_id}"
-    
+
     try:
-        # Make API request to update the creative
         data = await make_api_request(endpoint, access_token, update_data, method="POST")
 
-        # If successful, get more details about the updated creative
-        if "id" in data:
+        if "id" in data or "success" in data:
             creative_endpoint = f"{creative_id}"
             creative_params = {
                 "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,url_tags,link_url"
@@ -877,9 +869,9 @@ async def update_ad_creative(
                 "creative_id": creative_id,
                 "details": creative_details
             })
-        
+
         return json.dumps(data)
-    
+
     except Exception as e:
         return json.dumps({
             "error": "Failed to update ad creative",

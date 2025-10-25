@@ -257,19 +257,15 @@ For local installation configuration, authentication options, and advanced techn
     - Returns: Confirmation with new creative details
 
 16. `mcp_meta_ads_update_ad_creative`
-    - Update an existing ad creative with new content or settings
+    - Update ad creative metadata (IMPORTANT: creative content is immutable)
     - Inputs:
       - `creative_id`: Meta Ads creative ID to update
-      - `name`: New creative name
-      - `message`: New ad copy/text
-      - `headline`: Single headline for simple ads (cannot be used with headlines)
-      - `headlines`: New list of headlines for dynamic creative testing (cannot be used with headline)
-      - `description`: Single description for simple ads (cannot be used with descriptions)
-      - `descriptions`: New list of descriptions for dynamic creative testing (cannot be used with description)
-      - `dynamic_creative_spec`: New dynamic creative optimization settings
-      - `call_to_action_type`: New call to action button type
+      - `name`: New creative name (up to 100 characters)
+      - `status`: Creative status (ACTIVE, IN_PROCESS, WITH_ISSUES, DELETED)
+      - `account_id`: Ad account ID (format: act_XXXXXXXXX)
       - `access_token` (optional): Meta API access token (will use cached token if not provided)
     - Returns: Confirmation with updated creative details
+    - Note: According to Meta API, creative content (message, headline, description, images) is IMMUTABLE. To change content, create a new creative with `create_ad_creative` and update your ad to use it with `update_ad`
 
 17. `mcp_meta_ads_upload_ad_media`
     - Upload an image or video to use in Meta Ads creatives

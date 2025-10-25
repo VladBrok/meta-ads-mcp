@@ -100,44 +100,46 @@ class TestNonDynamicCreatives:
             assert link_data["link"] == "https://facebook.com"  # default
     
     async def test_update_non_dynamic_creative(self):
-        """Test updating a non-dynamic creative."""
-        
-        sample_creative_data = {
+        """Test updating ad creative metadata (name and status only).
+
+        Note: According to Meta API docs, creative content (message, headline, description, images)
+        is immutable. Only metadata (name, status, account_id) can be updated.
+        """
+
+        sample_update_response = {
+            "success": True,
+            "id": "123456789"
+        }
+
+        sample_creative_details = {
             "id": "123456789",
-            "name": "Updated Creative",
+            "name": "Updated Creative Name",
             "status": "ACTIVE"
         }
-        
+
         with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
-            mock_api.return_value = sample_creative_data
-            
+            mock_api.side_effect = [sample_update_response, sample_creative_details]
+
             result = await update_ad_creative(
                 access_token="test_token",
                 creative_id="123456789",
-                name="Updated Creative",
-                message="Updated message",
-                headline="Updated Headline",
-                description="Updated Description",
-                call_to_action_type="SHOP_NOW"
+                name="Updated Creative Name",
+                status="ACTIVE"
             )
-            
+
             result_data = json.loads(result)
             assert result_data["success"] is True
-            
-            # Verify the API call structure
+            assert result_data["creative_id"] == "123456789"
+
             call_args_list = mock_api.call_args_list
             first_call = call_args_list[0]
             update_data = first_call[0][2]
-            
-            assert update_data["name"] == "Updated Creative"
-            assert "object_story_spec" in update_data
-            assert "asset_feed_spec" not in update_data
-            
-            link_data = update_data["object_story_spec"]["link_data"]
-            assert link_data["message"] == "Updated message"
-            assert link_data["name"] == "Updated Headline"
-            assert link_data["description"] == "Updated Description"
-            assert link_data["call_to_action"]["type"] == "SHOP_NOW"
+
+            assert update_data["name"] == "Updated Creative Name"
+            assert update_data["status"] == "ACTIVE"
+            assert "object_story_spec" not in update_data
+            assert "message" not in update_data
+            assert "headline" not in update_data
     
     async def test_create_creative_missing_required_params(self):
         """Test error handling for missing required parameters."""
