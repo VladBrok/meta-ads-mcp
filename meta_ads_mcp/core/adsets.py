@@ -128,8 +128,8 @@ async def create_adset(
                     * Limit: 250 cities maximum
                   - geo_locations.location_types: Must be ["home", "recent"] if specified
                   - publisher_platforms: Platforms to show ads on. Can specify facebook only, instagram only, or both (e.g., ["facebook"], ["instagram"], or ["facebook", "instagram"]). Also supports audience_network and messenger.
-                  - facebook_positions: Facebook ad placement positions (feed, groups_feed, profile_feed, story, etc.). Only needed when facebook is in publisher_platforms.
-                  - instagram_positions: Instagram ad placement positions (stream, story, explore, explore_home, reels, profile_feed, ig_search, profile_reels). Only needed when instagram is in publisher_platforms. Optional, defaults to all positions.
+                  - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, video_feeds, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
+                  - instagram_positions: Instagram ad placement positions. Only needed when instagram is in publisher_platforms. Select any of the allowed positions: stream (main Instagram feed), story, explore, explore_home, reels, profile_feed, ig_search, profile_reels. Optional, defaults to all positions if not specified.
                   - device_platforms: Target devices (mobile, desktop)
         optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
         billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS', 'OFFER_CLAIMS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'VIDEO_VIEWS', 'THRUPLAY')
@@ -266,8 +266,8 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
                     * Limit: 250 cities maximum
                   - geo_locations.location_types: Must be ["home", "recent"] if specified
                   - publisher_platforms: Platforms to show ads on. Can specify facebook only, instagram only, or both (e.g., ["facebook"], ["instagram"], or ["facebook", "instagram"]). Also supports audience_network and messenger.
-                  - facebook_positions: Facebook ad placement positions (feed, groups_feed, profile_feed, story, etc.). Only needed when facebook is in publisher_platforms.
-                  - instagram_positions: Instagram ad placement positions (stream, story, explore, explore_home, reels, profile_feed, ig_search, profile_reels). Only needed when instagram is in publisher_platforms. Optional, defaults to all positions.
+                  - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, video_feeds, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
+                  - instagram_positions: Instagram ad placement positions. Only needed when instagram is in publisher_platforms. Select any of the allowed positions: stream (main Instagram feed), story, explore, explore_home, reels, profile_feed, ig_search, profile_reels. Optional, defaults to all positions if not specified.
                   - device_platforms: Target devices (mobile, desktop)
         optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
         daily_budget: Daily budget in account currency (in cents) as a string
