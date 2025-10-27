@@ -182,9 +182,9 @@ async def create_adset(
     params = {
         "name": name,
         "campaign_id": campaign_id,
-        "status": status.value,
-        "optimization_goal": optimization_goal.value,
-        "billing_event": billing_event.value,
+        "status": getattr(status, 'value', status),
+        "optimization_goal": getattr(optimization_goal, 'value', optimization_goal),
+        "billing_event": getattr(billing_event, 'value', billing_event),
         "targeting": json.dumps(targeting)
     }
     
@@ -193,7 +193,7 @@ async def create_adset(
         params["bid_amount"] = str(bid_amount)
     
     if bid_strategy is not None:
-        params["bid_strategy"] = bid_strategy.value
+        params["bid_strategy"] = getattr(bid_strategy, 'value', bid_strategy)
     
     if not start_time:
         start_time = datetime.utcnow().strftime('%Y-%m-%dT00:00:00+0000')
@@ -215,7 +215,7 @@ async def create_adset(
         params["promoted_object"] = json.dumps(promoted_object)
     
     if destination_type is not None:
-        params["destination_type"] = destination_type.value
+        params["destination_type"] = getattr(destination_type, 'value', destination_type)
     
     # Add attribution spec if provided
     if attribution_spec:
