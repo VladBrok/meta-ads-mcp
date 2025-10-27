@@ -234,9 +234,9 @@ async def create_adset(
 
 @mcp_server.tool()
 @meta_api_tool
-async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, Any]] = None, bid_strategy: str = None,
-                        bid_amount: int = None, status: str = None, targeting: Dict[str, Any] = None,
-                        optimization_goal: str = None, daily_budget = None, lifetime_budget = None,
+async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, Any]] = None, bid_strategy: Optional[BidStrategy] = None,
+                        bid_amount: int = None, status: Optional[AdSetStatus] = None, targeting: Dict[str, Any] = None,
+                        optimization_goal: Optional[OptimizationGoal] = None, daily_budget = None, lifetime_budget = None,
                         start_time: str = None, end_time: str = None,
                         attribution_spec: List[Dict[str, Any]] = None,
                         access_token: str = None) -> str:
@@ -245,11 +245,11 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
     
     Args:
         adset_id: Meta Ads ad set ID
-        frequency_control_specs: List of frequency control specifications 
+        frequency_control_specs: List of frequency control specifications
                                  (e.g. [{"event": "IMPRESSIONS", "interval_days": 7, "max_frequency": 3}])
-        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP')
+        bid_strategy: Bid strategy
         bid_amount: Bid amount in account currency (in cents)
-        status: Update ad set status (ACTIVE, PAUSED, etc.)
+        status: Update ad set status
         targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications.
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
@@ -270,7 +270,7 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
                   - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, video_feeds, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
                   - instagram_positions: Instagram ad placement positions. Only needed when instagram is in publisher_platforms. Select any of the allowed positions: stream (main Instagram feed), story, explore, explore_home, reels, profile_feed, ig_search, profile_reels. Optional, defaults to all positions if not specified.
                   - device_platforms: Target devices (mobile, desktop)
-        optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
+        optimization_goal: Conversion optimization goal
         daily_budget: Daily budget in account currency (in cents) as a string
         lifetime_budget: Lifetime budget in account currency (in cents) as a string
         start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). ONLY editable before delivery begins.
@@ -292,16 +292,16 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
         params['frequency_control_specs'] = frequency_control_specs
     
     if bid_strategy is not None:
-        params['bid_strategy'] = bid_strategy
-        
+        params['bid_strategy'] = getattr(bid_strategy, 'value', bid_strategy)
+
     if bid_amount is not None:
         params['bid_amount'] = str(bid_amount)
-        
+
     if status is not None:
-        params['status'] = status
-        
+        params['status'] = getattr(status, 'value', status)
+
     if optimization_goal is not None:
-        params['optimization_goal'] = optimization_goal
+        params['optimization_goal'] = getattr(optimization_goal, 'value', optimization_goal)
         
     if targeting is not None:
         # Ensure proper JSON encoding for targeting

@@ -12,6 +12,7 @@ from .api import meta_api_tool, make_api_request, make_batch_api_request, make_a
 from .accounts import get_ad_accounts
 from .utils import download_image, try_multiple_download_methods, ad_creative_images, extract_creative_image_urls
 from .server import mcp_server
+from .ad_enums import AdStatus
 
 
 @mcp_server.tool()
@@ -88,7 +89,7 @@ async def create_ad(
     name: str = None,
     adset_id: str = None,
     creative_id: str = None,
-    status: str = "PAUSED",
+    status: AdStatus = AdStatus.PAUSED,
     bid_amount = None,
     tracking_specs: Optional[List[Dict[str, Any]]] = None,
     access_token: str = None
@@ -126,7 +127,7 @@ async def create_ad(
         "name": name,
         "adset_id": adset_id,
         "creative": {"creative_id": creative_id},
-        "status": status
+        "status": getattr(status, 'value', status)
     }
     
     # Add bid amount if provided
@@ -504,7 +505,7 @@ async def save_ad_image_locally(access_token: str = None, ad_id: str = None, out
 @meta_api_tool
 async def update_ad(
     ad_id: str,
-    status: str = None,
+    status: Optional[AdStatus] = None,
     bid_amount: int = None,
     tracking_specs = None,
     creative_id: str = None,
@@ -515,7 +516,7 @@ async def update_ad(
     
     Args:
         ad_id: Meta Ads ad ID
-        status: Ad status (e.g., ACTIVE, PAUSED, etc.)
+        status: Ad status
         bid_amount: Optional bid amount in account currency (in cents)
         tracking_specs: Optional tracking specifications (e.g., for pixel events).
                       Example: [{"action.type":"offsite_conversion","fb_pixel":["YOUR_PIXEL_ID"]}]
@@ -526,8 +527,8 @@ async def update_ad(
         return json.dumps({"error": "Ad ID is required"})
 
     params = {}
-    if status:
-        params["status"] = status
+    if status is not None:
+        params["status"] = getattr(status, 'value', status)
     if bid_amount is not None:
         # Ensure bid_amount is sent as a string if it's not null
         params["bid_amount"] = str(bid_amount)

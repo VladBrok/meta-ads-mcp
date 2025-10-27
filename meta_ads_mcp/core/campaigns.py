@@ -5,6 +5,7 @@ from typing import List, Optional, Dict, Any, Union
 from .api import meta_api_tool, make_api_request, make_batch_api_request
 from .accounts import get_ad_accounts
 from .server import mcp_server
+from .campaign_enums import CampaignObjective, CampaignStatus, CampaignBidStrategy
 
 
 @mcp_server.tool()
@@ -94,13 +95,13 @@ async def create_campaign(
     access_token: str = None,
     account_id: str = None,
     name: str = None,
-    objective: str = None,
+    objective: Optional[CampaignObjective] = None,
     special_ad_categories: List[str] = None,
     special_ad_category_country: str = None,
     daily_budget = None,
     lifetime_budget = None,
     buying_type: str = None,
-    bid_strategy: str = None,
+    bid_strategy: Optional[CampaignBidStrategy] = None,
     bid_cap = None,
     spend_cap = None,
     campaign_budget_optimization: bool = None
@@ -112,15 +113,13 @@ async def create_campaign(
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
         name: Campaign name
-        objective: Campaign objective (outcome-based). Must be one of:
-                   OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT,
-                   OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_APP_PROMOTION.
+        objective: Campaign objective (outcome-based)
         special_ad_categories: List of special ad categories if applicable
         special_ad_category_country: Country for special ad categories (e.g., 'NL', 'DE', 'US')
         daily_budget: Daily budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
         lifetime_budget: Lifetime budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
         buying_type: Buying type (e.g., 'AUCTION')
-        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP', 'COST_CAP', 'LOWEST_COST_WITHOUT_CAP')
+        bid_strategy: Bid strategy
         bid_cap: Bid cap in account currency (in cents) as a string
         spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
         campaign_budget_optimization: Whether to enable campaign budget optimization.
@@ -143,9 +142,9 @@ async def create_campaign(
     
     params = {
         "name": name,
-        "objective": objective,
+        "objective": getattr(objective, 'value', objective),
         "status": "PAUSED",
-        "special_ad_categories": json.dumps(special_ad_categories)  # Properly format as JSON string
+        "special_ad_categories": json.dumps(special_ad_categories)
     }
     
     # Always use campaign-level budgets if provided
@@ -159,9 +158,9 @@ async def create_campaign(
     # Add new parameters
     if buying_type:
         params["buying_type"] = buying_type
-    
-    if bid_strategy:
-        params["bid_strategy"] = bid_strategy
+
+    if bid_strategy is not None:
+        params["bid_strategy"] = getattr(bid_strategy, 'value', bid_strategy)
     
     if bid_cap is not None:
         params["bid_cap"] = str(bid_cap)
@@ -196,16 +195,16 @@ async def update_campaign(
     access_token: str = None,
     campaign_id: str = None,
     name: str = None,
-    status: str = None,
+    status: Optional[CampaignStatus] = None,
     special_ad_categories: List[str] = None,
     daily_budget = None,
     lifetime_budget = None,
-    bid_strategy: str = None,
+    bid_strategy: Optional[CampaignBidStrategy] = None,
     bid_cap = None,
     spend_cap = None,
     campaign_budget_optimization: bool = None,
-    objective: str = None,  # Add objective if it's updatable
-    use_adset_level_budgets: bool = None,  # Add other updatable fields as needed based on API docs
+    objective: Optional[CampaignObjective] = None,
+    use_adset_level_budgets: bool = None,
 ) -> str:
     """
     Update an existing campaign in a Meta Ads account.
@@ -214,20 +213,17 @@ async def update_campaign(
         access_token: Meta API access token (optional - will use cached token if not provided)
         campaign_id: Meta Ads campaign ID (required)
         name: Campaign name
-        status: Campaign status (e.g., 'ACTIVE', 'PAUSED')
+        status: Campaign status
         special_ad_categories: List of special ad categories if applicable
         daily_budget: Daily budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
                      Set to empty string "" to remove the daily budget.
         lifetime_budget: Lifetime budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
                         Set to empty string "" to remove the lifetime budget.
-        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP', 'COST_CAP', 'LOWEST_COST_WITHOUT_CAP')
+        bid_strategy: Bid strategy
         bid_cap: Bid cap in account currency (in cents) as a string
         spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
         campaign_budget_optimization: Whether to enable campaign budget optimization.
-        objective: Campaign objective (outcome-based). Must be one of:
-                   OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT,
-                   OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_APP_PROMOTION.
-                   Note: May not always be updatable
+        objective: Campaign objective (outcome-based). Note: May not always be updatable
         use_adset_level_budgets: If True, removes campaign-level budgets to switch to ad set level budgets
     """
     if not campaign_id:
@@ -241,7 +237,7 @@ async def update_campaign(
     if name is not None:
         params["name"] = name
     if status is not None:
-        params["status"] = status
+        params["status"] = getattr(status, 'value', status)
     if special_ad_categories is not None:
         # Note: Updating special_ad_categories might have specific API rules or might not be allowed after creation.
         # The API might require an empty list `[]` to clear categories. Check Meta Docs.
@@ -287,13 +283,13 @@ async def update_campaign(
             params["campaign_budget_optimization"] = "true" if campaign_budget_optimization else "false"
     
     if bid_strategy is not None:
-        params["bid_strategy"] = bid_strategy
+        params["bid_strategy"] = getattr(bid_strategy, 'value', bid_strategy)
     if bid_cap is not None:
         params["bid_cap"] = str(bid_cap)
     if spend_cap is not None:
         params["spend_cap"] = str(spend_cap)
     if objective is not None:
-        params["objective"] = objective # Caution: Objective changes might reset learning or be restricted
+        params["objective"] = getattr(objective, 'value', objective)
 
     if not params:
         return json.dumps({"error": "No update parameters provided"})
