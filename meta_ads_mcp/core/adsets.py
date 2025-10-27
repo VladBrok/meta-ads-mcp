@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any, List
 from .api import meta_api_tool, make_api_request
 from .accounts import get_ad_accounts
 from .server import mcp_server
+from .adset_enums import AdSetStatus, OptimizationGoal, BillingEvent, BidStrategy, DestinationType
 
 
 @mcp_server.tool()
@@ -84,21 +85,21 @@ async def get_adset_details(access_token: str = None, adset_id: str = None) -> s
 @mcp_server.tool()
 @meta_api_tool
 async def create_adset(
-    account_id: str = None, 
-    campaign_id: str = None, 
+    account_id: str = None,
+    campaign_id: str = None,
     name: str = None,
-    status: str = "PAUSED",
+    status: AdSetStatus = AdSetStatus.PAUSED,
     targeting: Dict[str, Any] = None,
-    optimization_goal: str = None,
-    billing_event: str = None,
+    optimization_goal: Optional[OptimizationGoal] = None,
+    billing_event: Optional[BillingEvent] = None,
     bid_amount = None,
-    bid_strategy: str = None,
+    bid_strategy: Optional[BidStrategy] = None,
     start_time: str = None,
     end_time: str = None,
     dsa_beneficiary: str = None,
     dsa_payor: str = None,
     promoted_object: Dict[str, Any] = None,
-    destination_type: str = None,
+    destination_type: Optional[DestinationType] = None,
     attribution_spec: List[Dict[str, Any]] = None,
     access_token: str = None
 ) -> str:
@@ -131,10 +132,10 @@ async def create_adset(
                   - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, video_feeds, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
                   - instagram_positions: Instagram ad placement positions. Only needed when instagram is in publisher_platforms. Select any of the allowed positions: stream (main Instagram feed), story, explore, explore_home, reels, profile_feed, ig_search, profile_reels. Optional, defaults to all positions if not specified.
                   - device_platforms: Target devices (mobile, desktop)
-        optimization_goal: Conversion optimization goal (e.g., 'APP_INSTALLS', 'AD_RECALL_LIFT', 'ENGAGED_USERS', 'EVENT_RESPONSES', 'IMPRESSIONS', 'LEAD_GENERATION', 'QUALITY_LEAD', 'LINK_CLICKS', 'OFFSITE_CONVERSIONS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'QUALITY_CALL', 'REACH', 'LANDING_PAGE_VIEWS', 'VISIT_INSTAGRAM_PROFILE', 'VALUE', 'THRUPLAY', 'DERIVED_EVENTS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'CONVERSATIONS')
-        billing_event: How you're charged (e.g., 'IMPRESSIONS', 'LINK_CLICKS', 'OFFER_CLAIMS', 'PAGE_LIKES', 'POST_ENGAGEMENT', 'VIDEO_VIEWS', 'THRUPLAY')
+        optimization_goal: Conversion optimization goal
+        billing_event: How you're charged
         bid_amount: Bid amount in account currency (in cents)
-        bid_strategy: Bid strategy (e.g., 'LOWEST_COST', 'LOWEST_COST_WITH_BID_CAP')
+        bid_strategy: Bid strategy
         start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). Defaults to today if not provided.
         end_time: End time in ISO 8601 format
         dsa_beneficiary: DSA beneficiary (person/organization benefiting from ads) for European compliance
@@ -151,7 +152,7 @@ async def create_adset(
                         - For pages: page_id
                         - pixel_id: Facebook conversion pixel ID (numeric string) for offsite conversions
                         - Must have permissions for promoted objects
-        destination_type: Where users are directed after clicking the ad. Valid types: WEBSITE, APP, MESSENGER, INSTAGRAM_DIRECT.
+        destination_type: Where users are directed after clicking the ad
         attribution_spec: Pass 'attribution_spec' as a list of dictionary objects for conversion tracking.
                          Do not pass event_type, window_days, etc. as separate parameters.
                          Example format (use your own values): [{"event_type": "CLICK_THROUGH", "window_days": 7}, {"event_type": "VIEW_THROUGH", "window_days": 1}]
@@ -181,18 +182,18 @@ async def create_adset(
     params = {
         "name": name,
         "campaign_id": campaign_id,
-        "status": status,
-        "optimization_goal": optimization_goal,
-        "billing_event": billing_event,
-        "targeting": json.dumps(targeting)  # Properly format as JSON string
+        "status": status.value,
+        "optimization_goal": optimization_goal.value,
+        "billing_event": billing_event.value,
+        "targeting": json.dumps(targeting)
     }
     
     # Add other parameters if provided
     if bid_amount is not None:
         params["bid_amount"] = str(bid_amount)
     
-    if bid_strategy:
-        params["bid_strategy"] = bid_strategy
+    if bid_strategy is not None:
+        params["bid_strategy"] = bid_strategy.value
     
     if not start_time:
         start_time = datetime.utcnow().strftime('%Y-%m-%dT00:00:00+0000')
@@ -213,8 +214,8 @@ async def create_adset(
     if promoted_object:
         params["promoted_object"] = json.dumps(promoted_object)
     
-    if destination_type:
-        params["destination_type"] = destination_type
+    if destination_type is not None:
+        params["destination_type"] = destination_type.value
     
     # Add attribution spec if provided
     if attribution_spec:
