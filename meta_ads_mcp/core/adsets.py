@@ -135,7 +135,8 @@ async def create_adset(
         optimization_goal: Conversion optimization goal
         billing_event: How you're charged
         bid_amount: Bid amount in account currency (in cents)
-        bid_strategy: Bid strategy
+        bid_strategy: Bid strategy. If you enable campaign budget optimization, you should set bid_strategy at the parent campaign level.
+                     If you do not enable campaign budget optimization, you should set bid_strategy at the ad set level.
         start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). Defaults to today if not provided.
         end_time: End time in ISO 8601 format
         dsa_beneficiary: DSA beneficiary (person/organization benefiting from ads) for European compliance
@@ -247,7 +248,8 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
         adset_id: Meta Ads ad set ID
         frequency_control_specs: List of frequency control specifications
                                  (e.g. [{"event": "IMPRESSIONS", "interval_days": 7, "max_frequency": 3}])
-        bid_strategy: Bid strategy
+        bid_strategy: Bid strategy. If you enable campaign budget optimization, you should set bid_strategy at the parent campaign level.
+                     If you do not enable campaign budget optimization, you should set bid_strategy at the ad set level.
         bid_amount: Bid amount in account currency (in cents)
         status: Update ad set status
         targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications.

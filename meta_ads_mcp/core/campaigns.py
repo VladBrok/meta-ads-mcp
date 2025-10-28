@@ -119,7 +119,8 @@ async def create_campaign(
         daily_budget: Daily budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
         lifetime_budget: Lifetime budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
         buying_type: Buying type (e.g., 'AUCTION')
-        bid_strategy: Bid strategy
+        bid_strategy: Bid strategy. If you enable campaign budget optimization, you should set bid_strategy at the parent campaign level.
+                     If you do not enable campaign budget optimization, you should set bid_strategy at the ad set level.
         bid_cap: Bid cap in account currency (in cents) as a string
         spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
         campaign_budget_optimization: Whether to enable campaign budget optimization.
@@ -219,7 +220,8 @@ async def update_campaign(
                      Set to empty string "" to remove the daily budget.
         lifetime_budget: Lifetime budget in account currency (in cents) as a string. Budgets are managed at the campaign level.
                         Set to empty string "" to remove the lifetime budget.
-        bid_strategy: Bid strategy
+        bid_strategy: Bid strategy. If you enable campaign budget optimization, you should set bid_strategy at the parent campaign level.
+                     If you do not enable campaign budget optimization, you should set bid_strategy at the ad set level.
         bid_cap: Bid cap in account currency (in cents) as a string
         spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
         campaign_budget_optimization: Whether to enable campaign budget optimization.

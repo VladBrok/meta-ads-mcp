@@ -40,8 +40,10 @@ class BillingEvent(str, Enum):
 
 
 class BidStrategy(str, Enum):
-    LOWEST_COST = "LOWEST_COST"
+    LOWEST_COST_WITHOUT_CAP = "LOWEST_COST_WITHOUT_CAP"
     LOWEST_COST_WITH_BID_CAP = "LOWEST_COST_WITH_BID_CAP"
+    COST_CAP = "COST_CAP"
+    LOWEST_COST_WITH_MIN_ROAS = "LOWEST_COST_WITH_MIN_ROAS"
 
 
 class DestinationType(str, Enum):
