@@ -116,7 +116,7 @@ async def create_adset(
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
                   Note: Advanced targeting features are NOT supported.
-                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook", "instagram"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "instagram_positions": ["stream", "story"], "device_platforms": ["mobile", "desktop"]}
+                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "kilometer", "key": "1648467", "name": "Arnhem", "radius": 18, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook", "instagram"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "instagram_positions": ["stream", "story"], "device_platforms": ["mobile", "desktop"]}
                   Key targeting parameters to include in the single object:
                   - age_min: Minimum age (13-65, defaults to 18)
                   - age_max: Maximum age (13-65, must be 65 or lower)
@@ -256,7 +256,7 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
                   Note: Advanced targeting features are NOT supported. This will REPLACE existing targeting.
-                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "mile", "key": "1648467", "name": "Arnhem", "radius": 11, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook", "instagram"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "instagram_positions": ["stream", "story"], "device_platforms": ["mobile", "desktop"]}
+                  Example format (use your own values): {"age_max": 65, "age_min": 18, "genders": [1, 2], "geo_locations": {"cities": [{"country": "NL", "distance_unit": "kilometer", "key": "1648467", "name": "Arnhem", "radius": 18, "region": "Gelderland", "region_id": "2662"}], "location_types": ["home", "recent"]}, "locales": [14], "targeting_relaxation_types": {"lookalike": 0, "custom_audience": 0}, "publisher_platforms": ["facebook", "instagram"], "facebook_positions": ["feed", "groups_feed", "profile_feed", "story"], "instagram_positions": ["stream", "story"], "device_platforms": ["mobile", "desktop"]}
                   Key targeting parameters to include in the single object:
                   - age_min: Minimum age (13-65, defaults to 18)
                   - age_max: Maximum age (13-65, must be 65 or lower)
