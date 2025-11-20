@@ -129,7 +129,7 @@ async def create_adset(
                     * Limit: 250 cities maximum
                   - geo_locations.location_types: Must be ["home", "recent"] if specified
                   - publisher_platforms: Platforms to show ads on. Can specify facebook only, instagram only, or both (e.g., ["facebook"], ["instagram"], or ["facebook", "instagram"]). Also supports audience_network and messenger.
-                  - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, video_feeds, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
+                  - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
                   - instagram_positions: Instagram ad placement positions. Only needed when instagram is in publisher_platforms. Select any of the allowed positions: stream (main Instagram feed), story, explore, explore_home, reels, profile_feed, ig_search, profile_reels. Optional, defaults to all positions if not specified.
                   - device_platforms: Target devices (mobile, desktop)
         optimization_goal: Conversion optimization goal
@@ -269,7 +269,7 @@ async def update_adset(adset_id: str, frequency_control_specs: List[Dict[str, An
                     * Limit: 250 cities maximum
                   - geo_locations.location_types: Must be ["home", "recent"] if specified
                   - publisher_platforms: Platforms to show ads on. Can specify facebook only, instagram only, or both (e.g., ["facebook"], ["instagram"], or ["facebook", "instagram"]). Also supports audience_network and messenger.
-                  - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, video_feeds, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
+                  - facebook_positions: Facebook ad placement positions. Only needed when facebook is in publisher_platforms. Select any of the allowed positions: feed, right_hand_column, marketplace, story, search, instream_video, facebook_reels, facebook_reels_overlay, profile_feed, notification.
                   - instagram_positions: Instagram ad placement positions. Only needed when instagram is in publisher_platforms. Select any of the allowed positions: stream (main Instagram feed), story, explore, explore_home, reels, profile_feed, ig_search, profile_reels. Optional, defaults to all positions if not specified.
                   - device_platforms: Target devices (mobile, desktop)
         optimization_goal: Conversion optimization goal
