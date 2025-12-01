@@ -753,7 +753,7 @@ async def create_ad_creative(
         thumbnail_url: Thumbnail image URL for video creatives (required when video_id is provided)
 
     Returns:
-        JSON response with created creative details
+        JSON with creative_id on success
     """
     if not account_id:
         return json.dumps({"error": "No account ID provided"})
@@ -839,19 +839,10 @@ async def create_ad_creative(
         # Make API request to create the creative
         data = await make_api_request(endpoint, access_token, creative_data, method="POST")
         
-        # If successful, get more details about the created creative
         if "id" in data:
-            creative_id = data["id"]
-            creative_endpoint = f"{creative_id}"
-            creative_params = {
-                "fields": "id,name,status,thumbnail_url,image_url,image_hash,object_story_spec,url_tags,link_url"
-            }
-            
-            creative_details = await make_api_request(creative_endpoint, access_token, creative_params)
             return json.dumps({
                 "success": True,
-                "creative_id": creative_id,
-                "details": creative_details
+                "creative_id": data["id"]
             })
         
         return json.dumps(data)

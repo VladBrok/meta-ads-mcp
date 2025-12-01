@@ -37,6 +37,32 @@ class GraphAPIError(Exception):
             auth_manager.invalidate_token()
 
 
+def filter_api_error(error_info: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(error_info, dict):
+        return error_info
+
+    inner_error = error_info.get("error", {})
+    if not isinstance(inner_error, dict):
+        return error_info
+
+    filtered = {}
+    if "message" in inner_error:
+        filtered["message"] = inner_error["message"]
+    if "error_user_title" in inner_error:
+        filtered["error_user_title"] = inner_error["error_user_title"]
+    if "error_user_msg" in inner_error:
+        filtered["error_user_msg"] = inner_error["error_user_msg"]
+    if "code" in inner_error:
+        filtered["code"] = inner_error["code"]
+    if "error_subcode" in inner_error:
+        filtered["error_subcode"] = inner_error["error_subcode"]
+
+    if not filtered:
+        return error_info
+
+    return filtered
+
+
 def filter_paging_next(response_data: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(response_data, dict) and "paging" in response_data:
         if isinstance(response_data["paging"], dict):
@@ -115,7 +141,7 @@ async def make_api_request_with_file(
             return {
                 "error": {
                     "message": f"HTTP Error: {e.response.status_code}",
-                    "details": error_info
+                    "details": filter_api_error(error_info)
                 }
             }
 
@@ -237,10 +263,10 @@ async def make_api_request(
             return {
                 "error": {
                     "message": f"HTTP Error: {e.response.status_code}",
-                    "details": error_info
+                    "details": filter_api_error(error_info)
                 }
             }
-        
+
         except Exception as e:
             logger.error(f"Request Error: {str(e)}")
             return {"error": {"message": str(e)}}
