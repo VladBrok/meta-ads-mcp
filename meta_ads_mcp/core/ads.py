@@ -560,6 +560,68 @@ async def update_ad(
         })
 
 
+async def _upload_ad_media_core(
+    access_token: str,
+    account_id: str,
+    media_path: str,
+    name: str,
+    media_type: str
+) -> tuple[dict, str]:
+    if not account_id:
+        return {"error": "No account ID provided"}, None
+
+    if not media_path:
+        return {"error": "No media path provided"}, None
+
+    if not os.path.exists(media_path):
+        return {"error": f"Media file not found: {media_path}"}, None
+
+    if media_type.upper() not in ["IMAGE", "VIDEO"]:
+        media_type = "IMAGE"
+    else:
+        media_type = media_type.upper()
+
+    if not account_id.startswith("act_"):
+        account_id = f"act_{account_id}"
+
+    try:
+        if not name:
+            name = os.path.basename(media_path)
+
+        if media_type == "IMAGE":
+            with open(media_path, "rb") as media_file:
+                media_bytes = media_file.read()
+
+            import base64
+            encoded_media = base64.b64encode(media_bytes).decode('utf-8')
+
+            endpoint = f"{account_id}/adimages"
+            params = {
+                "bytes": encoded_media,
+                "name": name
+            }
+            print(f"Uploading image to Facebook Ad Account {account_id}")
+
+            data = await make_api_request(endpoint, access_token, params, method="POST")
+            return data, media_type
+        else:
+            endpoint = f"{account_id}/advideos"
+            print(f"Uploading video to Facebook Ad Account {account_id}")
+
+            additional_params = {}
+            if name:
+                additional_params["title"] = name
+
+            data = await make_api_request_with_file(endpoint, access_token, media_path, additional_params)
+            return data, media_type
+
+    except Exception as e:
+        return {
+            "error": f"Failed to upload {media_type.lower()}",
+            "details": str(e)
+        }, media_type
+
+
 @mcp_server.tool()
 @meta_api_tool
 async def upload_ad_media(
@@ -580,72 +642,79 @@ async def upload_ad_media(
         media_type: Type of media to upload - "IMAGE" or "VIDEO" (default: "IMAGE", invalid values fallback to "IMAGE")
 
     Returns:
-        JSON response with media details including hash (for images) or video_id (for videos) for creative creation
+        JSON with hash (for images) or video_id (for videos) for creative creation
     """
-    if not account_id:
-        return json.dumps({"error": "No account ID provided"})
+    data, resolved_media_type = await _upload_ad_media_core(access_token, account_id, media_path, name, media_type)
 
-    if not media_path:
-        return json.dumps({"error": "No media path provided"})
+    if not data or not isinstance(data, dict):
+        return json.dumps({"error": "Invalid response from API"})
 
-    if not os.path.exists(media_path):
-        return json.dumps({"error": f"Media file not found: {media_path}"})
+    if "error" in data:
+        return json.dumps(data)
 
-    if media_type.upper() not in ["IMAGE", "VIDEO"]:
-        media_type = "IMAGE"
+    if resolved_media_type == "IMAGE":
+        images = data.get("images")
+        if not images or not isinstance(images, dict):
+            return json.dumps({"error": "Invalid image upload response", "raw_response": data})
+        first_image = next(iter(images.values()), None)
+        if not first_image or not isinstance(first_image, dict):
+            return json.dumps({"error": "Invalid image data in response", "raw_response": data})
+        image_hash = first_image.get("hash")
+        if not image_hash:
+            return json.dumps({"error": "No hash in image response", "raw_response": data})
+        return json.dumps({"hash": image_hash})
     else:
-        media_type = media_type.upper()
+        video_id = data.get("id")
+        if not video_id:
+            return json.dumps({"error": "No video_id in response", "raw_response": data})
+        return json.dumps({"video_id": video_id})
 
-    if not account_id.startswith("act_"):
-        account_id = f"act_{account_id}"
-    
-    try:
-        if not name:
-            name = os.path.basename(media_path)
 
-        if media_type == "IMAGE":
-            with open(media_path, "rb") as media_file:
-                media_bytes = media_file.read()
+@mcp_server.tool()
+@meta_api_tool
+async def upload_ad_media_detailed(
+    access_token: str = None,
+    account_id: str = None,
+    media_path: str = None,
+    name: str = None,
+    media_type: str = "IMAGE"
+) -> str:
+    """
+    Upload an image or video to use in Meta Ads creatives. Returns detailed response with URLs.
 
-            import base64
-            encoded_media = base64.b64encode(media_bytes).decode('utf-8')
+    Args:
+        access_token: Meta API access token (optional - will use cached token if not provided)
+        account_id: Meta Ads account ID (format: act_XXXXXXXXX)
+        media_path: Path to the media file (image or video) to upload
+        name: Optional name for the media file (default: filename)
+        media_type: Type of media to upload - "IMAGE" or "VIDEO" (default: "IMAGE", invalid values fallback to "IMAGE")
 
-            endpoint = f"{account_id}/adimages"
-            params = {
-                "bytes": encoded_media,
-                "name": name
-            }
-            print(f"Uploading image to Facebook Ad Account {account_id}")
+    Returns:
+        JSON response with full media details including URLs, dimensions, hash (for images) or video_id (for videos)
+    """
+    data, resolved_media_type = await _upload_ad_media_core(access_token, account_id, media_path, name, media_type)
 
-            data = await make_api_request(endpoint, access_token, params, method="POST")
-            return json.dumps(data)
-        else:
-            endpoint = f"{account_id}/advideos"
-            print(f"Uploading video to Facebook Ad Account {account_id}")
+    if not data or not isinstance(data, dict):
+        return json.dumps({"error": "Invalid response from API"})
 
-            additional_params = {}
-            if name:
-                additional_params["title"] = name
+    if "error" in data:
+        return json.dumps(data)
 
-            data = await make_api_request_with_file(endpoint, access_token, media_path, additional_params)
-
-            if "error" in data:
-                return json.dumps(data)
-
-            if "id" in data:
-                return json.dumps({
-                    "success": True,
-                    "video_id": data["id"],
-                    "details": data
-                })
-
-            return json.dumps(data)
-    
-    except Exception as e:
+    if resolved_media_type == "VIDEO":
+        video_id = data.get("id")
+        if not video_id:
+            return json.dumps({"error": "No video_id in response", "raw_response": data})
         return json.dumps({
-            "error": f"Failed to upload {media_type.lower()}",
-            "details": str(e)
+            "success": True,
+            "video_id": video_id,
+            "details": data
         })
+
+    images = data.get("images")
+    if not images or not isinstance(images, dict):
+        return json.dumps({"error": "Invalid image upload response", "raw_response": data})
+
+    return json.dumps(data)
 
 
 @mcp_server.tool()
