@@ -563,18 +563,18 @@ async def update_ad(
 async def _upload_ad_media_core(
     access_token: str,
     account_id: str,
-    media_path: str,
+    media_path_url: str,
     name: str,
     media_type: str
 ) -> tuple[dict, str]:
     if not account_id:
         return {"error": "No account ID provided"}, None
 
-    if not media_path:
-        return {"error": "No media path provided"}, None
+    if not media_path_url:
+        return {"error": "No media URL provided"}, None
 
-    if not os.path.exists(media_path):
-        return {"error": f"Media file not found: {media_path}"}, None
+    if not os.path.exists(media_path_url):
+        return {"error": f"Media file not found: {media_path_url}"}, None
 
     if media_type.upper() not in ["IMAGE", "VIDEO"]:
         media_type = "IMAGE"
@@ -586,10 +586,10 @@ async def _upload_ad_media_core(
 
     try:
         if not name:
-            name = os.path.basename(media_path)
+            name = os.path.basename(media_path_url)
 
         if media_type == "IMAGE":
-            with open(media_path, "rb") as media_file:
+            with open(media_path_url, "rb") as media_file:
                 media_bytes = media_file.read()
 
             import base64
@@ -612,7 +612,7 @@ async def _upload_ad_media_core(
             if name:
                 additional_params["title"] = name
 
-            data = await make_api_request_with_file(endpoint, access_token, media_path, additional_params)
+            data = await make_api_request_with_file(endpoint, access_token, media_path_url, additional_params)
             return data, media_type
 
     except Exception as e:
@@ -627,7 +627,7 @@ async def _upload_ad_media_core(
 async def upload_ad_media(
     access_token: str = None,
     account_id: str = None,
-    media_path: str = None,
+    media_path_url: str = None,
     name: str = None,
     media_type: str = "IMAGE"
 ) -> str:
@@ -637,14 +637,14 @@ async def upload_ad_media(
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
-        media_path: Path to the media file (image or video) to upload
-        name: Optional name for the media file (default: filename)
+        media_path_url: URL of the media (image or video) to upload
+        name: Optional name for the media (default: derived from URL)
         media_type: Type of media to upload - "IMAGE" or "VIDEO" (default: "IMAGE", invalid values fallback to "IMAGE")
 
     Returns:
         JSON with hash (for images) or video_id (for videos) for creative creation
     """
-    data, resolved_media_type = await _upload_ad_media_core(access_token, account_id, media_path, name, media_type)
+    data, resolved_media_type = await _upload_ad_media_core(access_token, account_id, media_path_url, name, media_type)
 
     if not data or not isinstance(data, dict):
         return json.dumps({"error": "Invalid response from API"})
@@ -675,7 +675,7 @@ async def upload_ad_media(
 async def upload_ad_media_detailed(
     access_token: str = None,
     account_id: str = None,
-    media_path: str = None,
+    media_path_url: str = None,
     name: str = None,
     media_type: str = "IMAGE"
 ) -> str:
@@ -685,14 +685,14 @@ async def upload_ad_media_detailed(
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
-        media_path: Path to the media file (image or video) to upload
-        name: Optional name for the media file (default: filename)
+        media_path_url: URL of the media (image or video) to upload
+        name: Optional name for the media (default: derived from URL)
         media_type: Type of media to upload - "IMAGE" or "VIDEO" (default: "IMAGE", invalid values fallback to "IMAGE")
 
     Returns:
         JSON response with full media details including URLs, dimensions, hash (for images) or video_id (for videos)
     """
-    data, resolved_media_type = await _upload_ad_media_core(access_token, account_id, media_path, name, media_type)
+    data, resolved_media_type = await _upload_ad_media_core(access_token, account_id, media_path_url, name, media_type)
 
     if not data or not isinstance(data, dict):
         return json.dumps({"error": "Invalid response from API"})
