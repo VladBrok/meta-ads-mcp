@@ -148,11 +148,18 @@ async def create_campaign(
         "special_ad_categories": json.dumps(special_ad_categories)
     }
     
-    # Always use campaign-level budgets if provided
-    if daily_budget is not None:
+    if daily_budget is not None and lifetime_budget is not None:
         params["daily_budget"] = str(daily_budget)
-    if lifetime_budget is not None:
+        lifetime_budget_value = int(lifetime_budget)
+        if spend_cap is not None:
+            spend_cap = max(int(spend_cap), lifetime_budget_value)
+        else:
+            spend_cap = lifetime_budget_value
+    elif daily_budget is not None:
+        params["daily_budget"] = str(daily_budget)
+    elif lifetime_budget is not None:
         params["lifetime_budget"] = str(lifetime_budget)
+
     if campaign_budget_optimization is not None:
         params["campaign_budget_optimization"] = "true" if campaign_budget_optimization else "false"
     
