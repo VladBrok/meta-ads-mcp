@@ -831,7 +831,37 @@ async def create_ad_creative(
     
     if instagram_actor_id:
         creative_data["instagram_actor_id"] = instagram_actor_id
-    
+
+    # Marketing API v22+ deprecated the standard_enhancements bundle. Without an
+    # explicit per-feature opt-out, accounts with Advantage+ defaults enabled have
+    # the deprecated bundle auto-applied server-side and the request fails with
+    # error_subcode 3858504. Opting out of every individual feature avoids that.
+    creative_data["degrees_of_freedom_spec"] = {
+        "creative_features_spec": {
+            feature: {"enroll_status": "OPT_OUT"}
+            for feature in (
+                "advantage_plus_creative",
+                "biz_ai",
+                "carousel_to_video",
+                "cv_transformation",
+                "enhance_cta",
+                "image_animation",
+                "image_brightness_and_contrast",
+                "image_templates",
+                "image_touchups",
+                "inline_comment",
+                "pac_relaxation",
+                "product_extensions",
+                "replace_media_text",
+                "reveal_details_over_time",
+                "show_destination_blurbs",
+                "site_extensions",
+                "text_optimizations",
+                "text_translation",
+            )
+        }
+    }
+
     # Prepare the API endpoint for creating a creative
     endpoint = f"{account_id}/adcreatives"
     
