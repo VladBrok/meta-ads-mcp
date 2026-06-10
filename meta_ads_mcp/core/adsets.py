@@ -94,6 +94,8 @@ async def create_adset(
     billing_event: Optional[BillingEvent] = None,
     bid_amount = None,
     bid_strategy: Optional[BidStrategy] = None,
+    daily_budget = None,
+    lifetime_budget = None,
     start_time: str = None,
     end_time: str = None,
     dsa_beneficiary: str = None,
@@ -111,7 +113,10 @@ async def create_adset(
         campaign_id: Meta Ads campaign ID this ad set belongs to
         name: Ad set name
         status: Initial ad set status (default: PAUSED)
-        Note: Budgets are managed at the campaign level only. This tool does not accept ad set budgets.
+        daily_budget: Daily budget in account currency (in cents) as a string. Set this for ad-set-level budgeting,
+                     i.e. when the parent campaign carries no campaign-level budget. Omit it when the budget is at the campaign level.
+        lifetime_budget: Lifetime budget in account currency (in cents) as a string. Alternative to daily_budget for
+                     ad-set-level budgeting. Omit it when the budget is at the campaign level.
         targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications.
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
@@ -195,7 +200,13 @@ async def create_adset(
     
     if bid_strategy is not None:
         params["bid_strategy"] = getattr(bid_strategy, 'value', bid_strategy)
-    
+
+    if daily_budget is not None:
+        params["daily_budget"] = str(daily_budget)
+
+    if lifetime_budget is not None:
+        params["lifetime_budget"] = str(lifetime_budget)
+
     if not start_time:
         start_time = datetime.utcnow().strftime('%Y-%m-%dT00:00:00+0000')
     params["start_time"] = start_time
