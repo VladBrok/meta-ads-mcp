@@ -104,11 +104,12 @@ async def create_campaign(
     bid_strategy: Optional[CampaignBidStrategy] = None,
     bid_cap = None,
     spend_cap = None,
-    campaign_budget_optimization: bool = None
+    campaign_budget_optimization: bool = None,
+    is_adset_budget_sharing_enabled: bool = None
 ) -> str:
     """
     Create a new campaign in a Meta Ads account. Campaign is created as paused by default.
-    
+
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
@@ -124,6 +125,11 @@ async def create_campaign(
         bid_cap: Bid cap in account currency (in cents) as a string
         spend_cap: Spending limit for the campaign in account currency (in cents) as a string, should be at least 10000 cents
         campaign_budget_optimization: Whether to enable campaign budget optimization.
+        is_adset_budget_sharing_enabled: Whether ad sets share up to 20% of their budget with each other.
+                     Required by Marketing API v24.0+ whenever the budget is set at the ad set level (i.e. no
+                     campaign-level daily_budget/lifetime_budget). Enabling it (True) requires a uniform bid
+                     strategy across all ad sets. When the budget is at the ad set level and this is left unset,
+                     it defaults to False to satisfy the API requirement without enabling the optimization.
     """
     # Check required parameters
     if not account_id:
@@ -162,7 +168,16 @@ async def create_campaign(
 
     if campaign_budget_optimization is not None:
         params["campaign_budget_optimization"] = "true" if campaign_budget_optimization else "false"
-    
+
+    # Marketing API v24.0+ requires is_adset_budget_sharing_enabled (True/False) whenever the budget
+    # is set at the ad set level, i.e. no campaign-level budget is provided. Honor an explicit value;
+    # otherwise default it to False for ad-set-level budgets so the create call does not 400.
+    has_campaign_budget = daily_budget is not None or lifetime_budget is not None
+    if is_adset_budget_sharing_enabled is not None:
+        params["is_adset_budget_sharing_enabled"] = "true" if is_adset_budget_sharing_enabled else "false"
+    elif not has_campaign_budget:
+        params["is_adset_budget_sharing_enabled"] = "false"
+
     # Add new parameters
     if buying_type:
         params["buying_type"] = buying_type
