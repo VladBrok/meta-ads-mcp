@@ -171,14 +171,14 @@ class TestNonDynamicCreatives:
         if "data" in result_data:
             error_data = json.loads(result_data["data"])
             assert "error" in error_data
-            assert "image hash" in error_data["error"].lower()
+            assert "image_hash" in error_data["error"].lower()
         else:
             assert "error" in result_data
-            assert "image hash" in result_data["error"].lower()
+            assert "image_hash" in result_data["error"].lower()
     
     async def test_update_creative_missing_creative_id(self):
         """Test error handling for missing creative ID in update."""
-        
+
         result = await update_ad_creative(
             access_token="test_token",
             name="Updated Creative"
@@ -192,3 +192,199 @@ class TestNonDynamicCreatives:
         else:
             assert "error" in result_data
             assert "creative id" in result_data["error"].lower()
+
+
+def _unwrap_error(result: str) -> dict:
+    """Unwrap a create_ad_creative error result, which the MCP decorator may nest under 'data'."""
+    result_data = json.loads(result)
+    if "data" in result_data:
+        return json.loads(result_data["data"])
+    return result_data
+
+
+@pytest.mark.asyncio
+class TestPlacementAssetCustomization:
+    """Test cases for the placement asset customization (feed/story image pair) path."""
+
+    async def test_pac_creative_builds_asset_feed_spec(self):
+        """Both hashes -> asset_feed_spec with two labeled images and two placement rules."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.return_value = {"id": "cr_1"}
+
+            result = await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC Creative",
+                page_id="987654321",
+                link_url="https://example.com",
+                message="Test message",
+                headline="Single Headline",
+                description="Single Description",
+                call_to_action_type="LEARN_MORE",
+                feed_image_hash="square_hash",
+                story_image_hash="vertical_hash",
+                publisher_platforms=["facebook", "instagram"],
+            )
+
+            result_data = json.loads(result)
+            assert result_data["success"] is True
+            assert result_data["creative_id"] == "cr_1"
+
+            creative_data = mock_api.call_args_list[0][0][2]
+
+            # object_story_spec carries only the page id (no link_data) alongside asset_feed_spec.
+            assert creative_data["object_story_spec"] == {"page_id": "987654321"}
+            assert "instagram_actor_id" not in creative_data
+
+            afs = creative_data["asset_feed_spec"]
+            assert afs["ad_formats"] == ["SINGLE_IMAGE"]
+            assert afs["images"] == [
+                {"hash": "square_hash", "adlabels": [{"name": "feed_img"}]},
+                {"hash": "vertical_hash", "adlabels": [{"name": "story_img"}]},
+            ]
+            assert afs["bodies"] == [{"text": "Test message"}]
+            assert afs["titles"] == [{"text": "Single Headline"}]
+            assert afs["descriptions"] == [{"text": "Single Description"}]
+            assert afs["link_urls"] == [{"website_url": "https://example.com"}]
+            assert afs["call_to_action_types"] == ["LEARN_MORE"]
+
+            # Story placements get the vertical image via an explicit rule; every other
+            # placement gets the square image via the default (empty spec) catch-all rule.
+            rules = afs["asset_customization_rules"]
+            assert len(rules) == 2
+            story_rule, feed_rule = rules
+            assert story_rule["image_label"] == {"name": "story_img"}
+            assert story_rule["customization_spec"] == {
+                "publisher_platforms": ["facebook", "instagram"],
+                "facebook_positions": ["story"],
+                "instagram_positions": ["story"],
+            }
+            assert feed_rule["image_label"] == {"name": "feed_img"}
+            assert feed_rule["customization_spec"] == {}
+            assert feed_rule["is_default"] is True
+
+    async def test_pac_fb_only_filters_instagram_positions(self):
+        """Facebook-only ad set -> story rule carries facebook_positions only; default catch-all stays."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.return_value = {"id": "cr_2"}
+
+            await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC FB",
+                page_id="987654321",
+                feed_image_hash="square_hash",
+                story_image_hash="vertical_hash",
+                publisher_platforms=["facebook"],
+            )
+
+            afs = mock_api.call_args_list[0][0][2]["asset_feed_spec"]
+            story_rule, feed_rule = afs["asset_customization_rules"]
+            assert story_rule["customization_spec"]["publisher_platforms"] == ["facebook"]
+            assert story_rule["customization_spec"]["facebook_positions"] == ["story"]
+            assert "instagram_positions" not in story_rule["customization_spec"]
+            assert feed_rule["customization_spec"] == {}
+
+    async def test_pac_ig_only_filters_facebook_positions(self):
+        """Instagram-only ad set -> story rule carries instagram_positions only; default catch-all stays."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.return_value = {"id": "cr_3"}
+
+            await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC IG",
+                page_id="987654321",
+                feed_image_hash="square_hash",
+                story_image_hash="vertical_hash",
+                publisher_platforms=["instagram"],
+            )
+
+            afs = mock_api.call_args_list[0][0][2]["asset_feed_spec"]
+            story_rule, feed_rule = afs["asset_customization_rules"]
+            assert story_rule["customization_spec"]["publisher_platforms"] == ["instagram"]
+            assert story_rule["customization_spec"]["instagram_positions"] == ["story"]
+            assert "facebook_positions" not in story_rule["customization_spec"]
+            assert feed_rule["customization_spec"] == {}
+
+    async def test_pac_defaults_to_both_platforms(self):
+        """Omitting publisher_platforms defaults the story rule to facebook + instagram."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.return_value = {"id": "cr_4"}
+
+            await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC default",
+                page_id="987654321",
+                feed_image_hash="square_hash",
+                story_image_hash="vertical_hash",
+            )
+
+            afs = mock_api.call_args_list[0][0][2]["asset_feed_spec"]
+            story_rule, feed_rule = afs["asset_customization_rules"]
+            assert story_rule["customization_spec"]["publisher_platforms"] == ["facebook", "instagram"]
+            assert feed_rule["customization_spec"] == {}
+            assert feed_rule["is_default"] is True
+
+    async def test_pac_identical_hashes_collapse_to_single_image(self):
+        """Identical feed/story hashes collapse to the classic single-image creative."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.return_value = {"id": "cr_5"}
+
+            await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC same",
+                page_id="987654321",
+                link_url="https://example.com",
+                feed_image_hash="same_hash",
+                story_image_hash="same_hash",
+            )
+
+            creative_data = mock_api.call_args_list[0][0][2]
+            assert "asset_feed_spec" not in creative_data
+            assert creative_data["object_story_spec"]["link_data"]["image_hash"] == "same_hash"
+
+    async def test_pac_rejects_partial_pair(self):
+        """Only one of the two hashes -> error asking for BOTH."""
+        result = await create_ad_creative(
+            access_token="test_token",
+            account_id="act_123456789",
+            name="PAC partial",
+            page_id="987654321",
+            feed_image_hash="square_hash",
+        )
+        error_data = _unwrap_error(result)
+        assert "error" in error_data
+        assert "both" in error_data["error"].lower()
+
+    async def test_pac_rejects_with_video_id(self):
+        """feed/story pair cannot combine with a video."""
+        result = await create_ad_creative(
+            access_token="test_token",
+            account_id="act_123456789",
+            name="PAC video",
+            page_id="987654321",
+            video_id="vid_1",
+            feed_image_hash="square_hash",
+            story_image_hash="vertical_hash",
+        )
+        error_data = _unwrap_error(result)
+        assert "error" in error_data
+        assert "video_id" in error_data["error"].lower()
+
+    async def test_pac_rejects_with_image_hash(self):
+        """feed/story pair cannot combine with a single image_hash."""
+        result = await create_ad_creative(
+            access_token="test_token",
+            account_id="act_123456789",
+            name="PAC single",
+            page_id="987654321",
+            image_hash="abc123",
+            feed_image_hash="square_hash",
+            story_image_hash="vertical_hash",
+        )
+        error_data = _unwrap_error(result)
+        assert "error" in error_data
+        assert "not both" in error_data["error"].lower()

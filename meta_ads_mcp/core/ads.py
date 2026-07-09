@@ -717,6 +717,18 @@ async def upload_ad_media_detailed(
     return json.dumps(data)
 
 
+_PAC_STORY_POSITIONS = {"facebook": ["story"], "instagram": ["story"]}
+
+
+def _pac_customization_spec(position_map: dict, publisher_platforms: list) -> dict:
+    spec = {"publisher_platforms": list(publisher_platforms)}
+    if "facebook" in publisher_platforms and position_map.get("facebook"):
+        spec["facebook_positions"] = list(position_map["facebook"])
+    if "instagram" in publisher_platforms and position_map.get("instagram"):
+        spec["instagram_positions"] = list(position_map["instagram"])
+    return spec
+
+
 @mcp_server.tool()
 @meta_api_tool
 async def create_ad_creative(
@@ -732,17 +744,29 @@ async def create_ad_creative(
     description: str = None,
     call_to_action_type: str = None,
     instagram_actor_id: str = None,
-    thumbnail_url: str = None
+    thumbnail_url: str = None,
+    feed_image_hash: str = None,
+    story_image_hash: str = None,
+    publisher_platforms: list = None
 ) -> str:
     """
-    Create a new ad creative using an uploaded image hash or video ID.
+    Create a new ad creative from a single image, a video, or a placement-customized image pair.
+
+    Three mutually exclusive image/video modes:
+      1. Single image: pass image_hash (shown, auto-cropped, across all placements).
+      2. Video: pass video_id (plus thumbnail_url).
+      3. Placement-customized image pair: pass BOTH feed_image_hash and story_image_hash.
+         The vertical (9:16) story_image_hash is routed to story placements; the square
+         (1:1) feed_image_hash is the default for feed and every other placement, via
+         asset_feed_spec / asset_customization_rules — so one creative serves each
+         placement correctly-sized and adapts to any placement the ad set targets.
 
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
         account_id: Meta Ads account ID (format: act_XXXXXXXXX)
         name: Creative name
-        image_hash: Hash of the uploaded image (mutually exclusive with video_id)
-        video_id: ID of the uploaded video (mutually exclusive with image_hash)
+        image_hash: Hash of the uploaded image (single-image mode; mutually exclusive with video_id and the feed/story pair)
+        video_id: ID of the uploaded video (mutually exclusive with image_hash and the feed/story pair)
         page_id: Facebook Page ID to be used for the ad
         link_url: Destination URL for the ad
         message: Ad copy/text
@@ -751,6 +775,9 @@ async def create_ad_creative(
         call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
         instagram_actor_id: Optional Instagram account ID for Instagram placements
         thumbnail_url: Thumbnail image URL for video creatives (required when video_id is provided)
+        feed_image_hash: Square (1:1) image hash used as the default for feed and all non-story placements. Use WITH story_image_hash for placement asset customization; mutually exclusive with image_hash/video_id.
+        story_image_hash: Vertical (9:16) image hash routed to story placements. Use WITH feed_image_hash.
+        publisher_platforms: Platforms the parent ad set targets, e.g. ["facebook","instagram"], ["facebook"], or ["instagram"]. The placement customization rules are filtered to these so they align with the ad set. Defaults to ["facebook","instagram"].
 
     Returns:
         JSON with creative_id on success
@@ -758,24 +785,74 @@ async def create_ad_creative(
     if not account_id:
         return json.dumps({"error": "No account ID provided"})
 
-    if not image_hash and not video_id:
-        return json.dumps({"error": "Either image_hash or video_id must be provided"})
+    use_pac = bool(feed_image_hash) or bool(story_image_hash)
 
-    if image_hash and video_id:
-        return json.dumps({"error": "Cannot provide both image_hash and video_id - they are mutually exclusive"})
-    
+    if use_pac:
+        if video_id:
+            return json.dumps({"error": "Placement asset customization (feed_image_hash/story_image_hash) cannot be combined with video_id"})
+        if image_hash:
+            return json.dumps({"error": "Provide either image_hash (single image) OR feed_image_hash+story_image_hash (placement customization), not both"})
+        if not (feed_image_hash and story_image_hash):
+            return json.dumps({"error": "Placement asset customization requires BOTH feed_image_hash and story_image_hash"})
+        # Meta needs >=2 rules over >=2 distinct images; identical hashes -> collapse to single-image path.
+        if feed_image_hash == story_image_hash:
+            use_pac = False
+            image_hash = feed_image_hash
+    else:
+        if not image_hash and not video_id:
+            return json.dumps({"error": "Either image_hash or video_id must be provided"})
+        if image_hash and video_id:
+            return json.dumps({"error": "Cannot provide both image_hash and video_id - they are mutually exclusive"})
+
     if not name:
         name = f"Creative {int(time.time())}"
-    
+
     # Ensure account_id has the 'act_' prefix
     if not account_id.startswith("act_"):
         account_id = f"act_{account_id}"
-    
+
     creative_data = {
         "name": name
     }
 
-    if video_id:
+    if use_pac:
+        platforms = publisher_platforms or ["facebook", "instagram"]
+        object_story_spec = {"page_id": page_id}
+        if instagram_actor_id:
+            object_story_spec["instagram_user_id"] = instagram_actor_id
+        creative_data["object_story_spec"] = object_story_spec
+
+        asset_feed_spec = {
+            "images": [
+                {"hash": feed_image_hash, "adlabels": [{"name": "feed_img"}]},
+                {"hash": story_image_hash, "adlabels": [{"name": "story_img"}]},
+            ],
+            "ad_formats": ["SINGLE_IMAGE"],
+            "asset_customization_rules": [
+                {
+                    "image_label": {"name": "story_img"},
+                    "customization_spec": _pac_customization_spec(_PAC_STORY_POSITIONS, platforms),
+                },
+                {
+                    "image_label": {"name": "feed_img"},
+                    "customization_spec": {},
+                    "is_default": True,
+                },
+            ],
+        }
+        if message:
+            asset_feed_spec["bodies"] = [{"text": message}]
+        if headline:
+            asset_feed_spec["titles"] = [{"text": headline}]
+        if description:
+            asset_feed_spec["descriptions"] = [{"text": description}]
+        if link_url:
+            asset_feed_spec["link_urls"] = [{"website_url": link_url}]
+        if call_to_action_type:
+            asset_feed_spec["call_to_action_types"] = [call_to_action_type]
+
+        creative_data["asset_feed_spec"] = asset_feed_spec
+    elif video_id:
         video_data = {
             "video_id": video_id
         }
@@ -829,7 +906,7 @@ async def create_ad_creative(
                 "type": call_to_action_type
             }
     
-    if instagram_actor_id:
+    if instagram_actor_id and not use_pac:
         creative_data["instagram_actor_id"] = instagram_actor_id
 
     # Prepare the API endpoint for creating a creative
