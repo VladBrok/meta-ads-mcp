@@ -249,7 +249,8 @@ class TestPlacementAssetCustomization:
             assert afs["call_to_action_types"] == ["LEARN_MORE"]
 
             # Story placements get the vertical image via an explicit rule; every other
-            # placement gets the square image via the default (empty spec) catch-all rule.
+            # placement gets the square image via the empty catch-all rule. is_default is
+            # not set (it is a Multi-Language-ads-only field, not a placement fallback).
             rules = afs["asset_customization_rules"]
             assert len(rules) == 2
             story_rule, feed_rule = rules
@@ -261,10 +262,10 @@ class TestPlacementAssetCustomization:
             }
             assert feed_rule["image_label"] == {"name": "feed_img"}
             assert feed_rule["customization_spec"] == {}
-            assert feed_rule["is_default"] is True
+            assert "is_default" not in feed_rule
 
     async def test_pac_fb_only_filters_instagram_positions(self):
-        """Facebook-only ad set -> story rule carries facebook_positions only; default catch-all stays."""
+        """Facebook-only ad set -> story rule carries facebook_positions only; empty catch-all stays."""
         with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
             mock_api.return_value = {"id": "cr_2"}
 
@@ -286,7 +287,7 @@ class TestPlacementAssetCustomization:
             assert feed_rule["customization_spec"] == {}
 
     async def test_pac_ig_only_filters_facebook_positions(self):
-        """Instagram-only ad set -> story rule carries instagram_positions only; default catch-all stays."""
+        """Instagram-only ad set -> story rule carries instagram_positions only; empty catch-all stays."""
         with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
             mock_api.return_value = {"id": "cr_3"}
 
@@ -325,7 +326,7 @@ class TestPlacementAssetCustomization:
             story_rule, feed_rule = afs["asset_customization_rules"]
             assert story_rule["customization_spec"]["publisher_platforms"] == ["facebook", "instagram"]
             assert feed_rule["customization_spec"] == {}
-            assert feed_rule["is_default"] is True
+            assert "is_default" not in feed_rule
 
     async def test_pac_identical_hashes_collapse_to_single_image(self):
         """Identical feed/story hashes collapse to the classic single-image creative."""

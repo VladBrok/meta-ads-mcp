@@ -834,13 +834,13 @@ async def create_ad_creative(
                     "image_label": {"name": "story_img"},
                     "customization_spec": _pac_customization_spec(_PAC_STORY_POSITIONS, platforms),
                 },
-                # Square (1:1) image as the default for every other placement. An empty
-                # customization_spec is Meta's catch-all, so the ad adapts to whatever
-                # placements the ad set targets without listing each one.
+                # Square (1:1) image as the catch-all for every placement not matched by the
+                # story rule above. Placement customization uses an empty customization_spec as
+                # the catch-all; is_default is a Multi-Language-ads-only field and must not be set
+                # here (setting it makes Meta drop the fallback and the ad becomes uncoverable).
                 {
                     "image_label": {"name": "feed_img"},
                     "customization_spec": {},
-                    "is_default": True,
                 },
             ],
         }
