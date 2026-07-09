@@ -829,10 +829,14 @@ async def create_ad_creative(
             ],
             "ad_formats": ["SINGLE_IMAGE"],
             "asset_customization_rules": [
+                # Vertical (9:16) image for story-canvas placements.
                 {
                     "image_label": {"name": "story_img"},
                     "customization_spec": _pac_customization_spec(_PAC_STORY_POSITIONS, platforms),
                 },
+                # Square (1:1) image as the default for every other placement. An empty
+                # customization_spec is Meta's catch-all, so the ad adapts to whatever
+                # placements the ad set targets without listing each one.
                 {
                     "image_label": {"name": "feed_img"},
                     "customization_spec": {},
