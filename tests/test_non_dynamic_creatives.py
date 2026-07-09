@@ -286,8 +286,8 @@ class TestPlacementAssetCustomization:
             assert "instagram_positions" not in story_rule["customization_spec"]
             assert feed_rule["customization_spec"] == {}
 
-    async def test_pac_ig_only_filters_facebook_positions(self):
-        """Instagram-only ad set -> story rule carries instagram_positions only; empty catch-all stays."""
+    async def test_pac_ig_only_anchors_facebook(self):
+        """Instagram-only ad set -> story rule still anchors Facebook so Meta resolves the Page's Instagram identity; empty catch-all stays."""
         with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
             mock_api.return_value = {"id": "cr_3"}
 
@@ -303,9 +303,11 @@ class TestPlacementAssetCustomization:
 
             afs = mock_api.call_args_list[0][0][2]["asset_feed_spec"]
             story_rule, feed_rule = afs["asset_customization_rules"]
-            assert story_rule["customization_spec"]["publisher_platforms"] == ["instagram"]
-            assert story_rule["customization_spec"]["instagram_positions"] == ["story"]
-            assert "facebook_positions" not in story_rule["customization_spec"]
+            assert story_rule["customization_spec"] == {
+                "publisher_platforms": ["facebook", "instagram"],
+                "facebook_positions": ["story"],
+                "instagram_positions": ["story"],
+            }
             assert feed_rule["customization_spec"] == {}
 
     async def test_pac_defaults_to_both_platforms(self):

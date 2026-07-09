@@ -777,7 +777,7 @@ async def create_ad_creative(
         thumbnail_url: Thumbnail image URL for video creatives (required when video_id is provided)
         feed_image_hash: Square (1:1) image hash used as the default for feed and all non-story placements. Use WITH story_image_hash for placement asset customization; mutually exclusive with image_hash/video_id.
         story_image_hash: Vertical (9:16) image hash routed to story placements. Use WITH feed_image_hash.
-        publisher_platforms: Platforms the parent ad set targets, e.g. ["facebook","instagram"], ["facebook"], or ["instagram"]. The placement customization rules are filtered to these so they align with the ad set. Defaults to ["facebook","instagram"].
+        publisher_platforms: Platforms the parent ad set targets, e.g. ["facebook","instagram"], ["facebook"], or ["instagram"]. Instagram placement rules are added only when "instagram" is present; Facebook is always anchored in the creative so Meta can resolve the Page's Instagram identity (a creative scoped to Instagram alone is rejected as "Instagram Account Is Missing"). Defaults to ["facebook","instagram"].
 
     Returns:
         JSON with creative_id on success
@@ -817,6 +817,13 @@ async def create_ad_creative(
 
     if use_pac:
         platforms = publisher_platforms or ["facebook", "instagram"]
+        # Always anchor Facebook in the creative's customization rules, even when the ad set is
+        # Instagram-only. The Facebook Page is the identity Meta uses to auto-resolve the Page's
+        # page-backed Instagram account; a creative scoped to Instagram alone has no such anchor,
+        # so Meta rejects the ad with "Instagram Account Is Missing". The ad set's own
+        # publisher_platforms still governs delivery, so the Facebook anchor stays inert on an
+        # Instagram-only ad set.
+        creative_platforms = platforms if "facebook" in platforms else ["facebook", *platforms]
         object_story_spec = {"page_id": page_id}
         if instagram_actor_id:
             object_story_spec["instagram_user_id"] = instagram_actor_id
@@ -832,7 +839,7 @@ async def create_ad_creative(
                 # Vertical (9:16) image for story-canvas placements.
                 {
                     "image_label": {"name": "story_img"},
-                    "customization_spec": _pac_customization_spec(_PAC_STORY_POSITIONS, platforms),
+                    "customization_spec": _pac_customization_spec(_PAC_STORY_POSITIONS, creative_platforms),
                 },
                 # Square (1:1) image as the catch-all for every placement not matched by the
                 # story rule above. Placement customization uses an empty customization_spec as
