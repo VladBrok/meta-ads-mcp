@@ -425,9 +425,10 @@ async def search_locales(access_token: str = None, query: str = None, limit: int
     params = {
         "type": "adlocale",
         "q": query,
-        "limit": limit
+        "limit": limit,
+        "locale": "en_US"
     }
-    
+
     data = await make_api_request(endpoint, access_token, params)
-    
-    return json.dumps(data) 
+
+    return json.dumps(data)
