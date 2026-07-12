@@ -224,6 +224,7 @@ class TestPlacementAssetCustomization:
                 feed_image_hash="square_hash",
                 story_image_hash="vertical_hash",
                 publisher_platforms=["facebook", "instagram"],
+                instagram_actor_id="ig_override",
             )
 
             result_data = json.loads(result)
@@ -232,8 +233,12 @@ class TestPlacementAssetCustomization:
 
             creative_data = mock_api.call_args_list[0][0][2]
 
-            # object_story_spec carries only the page id (no link_data) alongside asset_feed_spec.
-            assert creative_data["object_story_spec"] == {"page_id": "987654321"}
+            # object_story_spec carries the page id and the Instagram identity (no link_data)
+            # alongside asset_feed_spec; an explicit instagram_actor_id is used as-is.
+            assert creative_data["object_story_spec"] == {
+                "page_id": "987654321",
+                "instagram_user_id": "ig_override",
+            }
             assert "instagram_actor_id" not in creative_data
 
             afs = creative_data["asset_feed_spec"]
@@ -279,6 +284,8 @@ class TestPlacementAssetCustomization:
                 publisher_platforms=["facebook"],
             )
 
+            # Facebook-only creative resolves no Instagram identity: the only call is the creative POST.
+            assert len(mock_api.call_args_list) == 1
             afs = mock_api.call_args_list[0][0][2]["asset_feed_spec"]
             story_rule, feed_rule = afs["asset_customization_rules"]
             assert story_rule["customization_spec"]["publisher_platforms"] == ["facebook"]
@@ -299,6 +306,7 @@ class TestPlacementAssetCustomization:
                 feed_image_hash="square_hash",
                 story_image_hash="vertical_hash",
                 publisher_platforms=["instagram"],
+                instagram_actor_id="ig_override",
             )
 
             afs = mock_api.call_args_list[0][0][2]["asset_feed_spec"]
@@ -322,6 +330,7 @@ class TestPlacementAssetCustomization:
                 page_id="987654321",
                 feed_image_hash="square_hash",
                 story_image_hash="vertical_hash",
+                instagram_actor_id="ig_override",
             )
 
             afs = mock_api.call_args_list[0][0][2]["asset_feed_spec"]
@@ -329,6 +338,90 @@ class TestPlacementAssetCustomization:
             assert story_rule["customization_spec"]["publisher_platforms"] == ["facebook", "instagram"]
             assert feed_rule["customization_spec"] == {}
             assert "is_default" not in feed_rule
+
+    async def test_pac_resolves_pbia_when_no_page_connected_ig(self):
+        """IG creative, no explicit id, no page-connected IG -> resolve/create PBIA and set it as instagram_user_id."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.side_effect = [
+                {"access_token": "page_token"},        # derive Page access token
+                {"data": []},                          # page-connected IG: none
+                {"id": "17841400000000000"},           # PBIA create-or-reuse (POST)
+                {"id": "cr_ig"},                        # creative creation
+            ]
+
+            result = await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC IG resolve",
+                page_id="987654321",
+                feed_image_hash="square_hash",
+                story_image_hash="vertical_hash",
+                publisher_platforms=["instagram"],
+            )
+
+            assert json.loads(result)["creative_id"] == "cr_ig"
+
+            calls = mock_api.call_args_list
+            # 1) derive a Page access token from the ad-account token
+            assert calls[0][0][0] == "987654321"
+            assert calls[0][0][2] == {"fields": "access_token"}
+            # 2) read page-connected IG with the DERIVED page token
+            assert calls[1][0][0] == "987654321/instagram_accounts"
+            assert calls[1][0][1] == "page_token"
+            # 3) create/reuse the PBIA via POST
+            assert calls[2][0][0] == "987654321/page_backed_instagram_accounts"
+            assert calls[2][1].get("method") == "POST"
+            # 4) creative POST carries the resolved id
+            assert calls[3][0][2]["object_story_spec"]["instagram_user_id"] == "17841400000000000"
+
+    async def test_pac_prefers_page_connected_ig(self):
+        """A page-connected IG present -> use it and do NOT create a PBIA."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.side_effect = [
+                {"access_token": "page_token"},                 # derive Page access token
+                {"data": [{"id": "17841409999999999"}]},        # page-connected IG present
+                {"id": "cr_ig2"},                                # creative creation
+            ]
+
+            result = await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC IG connected",
+                page_id="987654321",
+                feed_image_hash="square_hash",
+                story_image_hash="vertical_hash",
+                publisher_platforms=["instagram"],
+            )
+
+            assert json.loads(result)["creative_id"] == "cr_ig2"
+            calls = mock_api.call_args_list
+            # Exactly 3 calls: derive token, read connected IG, create creative. No PBIA POST.
+            assert len(calls) == 3
+            assert [c for c in calls if "page_backed_instagram_accounts" in c[0][0]] == []
+            assert calls[2][0][2]["object_story_spec"]["instagram_user_id"] == "17841409999999999"
+
+    async def test_pac_ig_resolution_failure_returns_error(self):
+        """If a Page access token can't be derived, fail loud instead of building an IG creative without an identity."""
+        with patch('meta_ads_mcp.core.ads.make_api_request', new_callable=AsyncMock) as mock_api:
+            mock_api.side_effect = [
+                {"error": {"message": "insufficient permissions"}},  # derive Page token fails
+            ]
+
+            result = await create_ad_creative(
+                access_token="test_token",
+                account_id="act_123456789",
+                name="PAC IG fail",
+                page_id="987654321",
+                feed_image_hash="square_hash",
+                story_image_hash="vertical_hash",
+                publisher_platforms=["instagram"],
+            )
+
+            error_data = json.loads(result)
+            assert "error" in error_data
+            assert "instagram identity" in error_data["error"].lower()
+            # No creative POST was attempted after the resolution failed.
+            assert len(mock_api.call_args_list) == 1
 
     async def test_pac_identical_hashes_collapse_to_single_image(self):
         """Identical feed/story hashes collapse to the classic single-image creative."""
@@ -343,11 +436,14 @@ class TestPlacementAssetCustomization:
                 link_url="https://example.com",
                 feed_image_hash="same_hash",
                 story_image_hash="same_hash",
+                instagram_actor_id="ig_override",
             )
 
             creative_data = mock_api.call_args_list[0][0][2]
             assert "asset_feed_spec" not in creative_data
             assert creative_data["object_story_spec"]["link_data"]["image_hash"] == "same_hash"
+            # A collapsed PAC creative still carries the Instagram identity when it targets Instagram.
+            assert creative_data["object_story_spec"]["instagram_user_id"] == "ig_override"
 
     async def test_pac_rejects_partial_pair(self):
         """Only one of the two hashes -> error asking for BOTH."""

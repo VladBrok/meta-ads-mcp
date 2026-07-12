@@ -729,6 +729,50 @@ def _pac_customization_spec(position_map: dict, publisher_platforms: list) -> di
     return spec
 
 
+async def _resolve_page_instagram_user_id(page_id: str, access_token: str):
+    """Resolve an Instagram identity for a Facebook Page, following Meta's documented order:
+    prefer an existing page-connected Instagram account, otherwise create-or-reuse the Page's
+    single Page-Backed Instagram Account (PBIA — a "shadow" ads-only Instagram account). Returns
+    (instagram_user_id, error_message) with exactly one non-None. The Page edges require a Page
+    access token, so one is derived from the ad-account/user token (which must have a role on the
+    Page); tokens are never logged.
+    """
+    if not page_id:
+        return None, "page_id is required to resolve an Instagram identity"
+
+    page = await make_api_request(page_id, access_token, {"fields": "access_token"}, method="GET")
+    if not isinstance(page, dict) or "error" in page:
+        detail = page.get("error") if isinstance(page, dict) else page
+        return None, f"could not derive a Page access token for page {page_id}: {detail}"
+    page_token = page.get("access_token")
+    if not page_token:
+        return None, (
+            f"no Page access token returned for page {page_id}; the ad-account token likely "
+            f"lacks a role on this Page"
+        )
+
+    connected = await make_api_request(
+        f"{page_id}/instagram_accounts", page_token, {"fields": "id"}, method="GET"
+    )
+    if not isinstance(connected, dict) or "error" in connected:
+        detail = connected.get("error") if isinstance(connected, dict) else connected
+        return None, f"could not read page-connected Instagram accounts for page {page_id}: {detail}"
+    connected_data = connected.get("data") or []
+    if connected_data and connected_data[0].get("id"):
+        return connected_data[0]["id"], None
+
+    pbia = await make_api_request(
+        f"{page_id}/page_backed_instagram_accounts", page_token, {}, method="POST"
+    )
+    if not isinstance(pbia, dict) or "error" in pbia:
+        detail = pbia.get("error") if isinstance(pbia, dict) else pbia
+        return None, f"could not create the Page-Backed Instagram Account for page {page_id}: {detail}"
+    pbia_id = pbia.get("id")
+    if not pbia_id:
+        return None, f"could not resolve an Instagram identity for page {page_id}"
+    return pbia_id, None
+
+
 @mcp_server.tool()
 @meta_api_tool
 async def create_ad_creative(
@@ -760,6 +804,10 @@ async def create_ad_creative(
          (1:1) feed_image_hash is the default for feed and every other placement, via
          asset_feed_spec / asset_customization_rules — so one creative serves each
          placement correctly-sized and adapts to any placement the ad set targets.
+         When such a creative targets Instagram, an Instagram identity is resolved for the
+         Page automatically (a page-connected Instagram account if it has one, else a
+         Page-Backed Instagram Account created on demand) and set as instagram_user_id,
+         so Instagram-only ad sets don't fail with "Instagram Account Is Missing".
 
     Args:
         access_token: Meta API access token (optional - will use cached token if not provided)
@@ -773,7 +821,7 @@ async def create_ad_creative(
         headline: Single headline for the ad
         description: Description text
         call_to_action_type: Call to action button type (e.g., 'LEARN_MORE', 'SIGN_UP', 'SHOP_NOW')
-        instagram_actor_id: Optional Instagram account ID for Instagram placements
+        instagram_actor_id: Optional Instagram account ID for Instagram placements. If omitted for a placement-customized creative that targets Instagram, one is resolved for the Page automatically.
         thumbnail_url: Thumbnail image URL for video creatives (required when video_id is provided)
         feed_image_hash: Square (1:1) image hash used as the default for feed and all non-story placements. Use WITH story_image_hash for placement asset customization; mutually exclusive with image_hash/video_id.
         story_image_hash: Vertical (9:16) image hash routed to story placements. Use WITH feed_image_hash.
@@ -815,6 +863,26 @@ async def create_ad_creative(
         "name": name
     }
 
+    # Resolve an Instagram identity for placement-customized creatives that will run on Instagram.
+    # An Instagram ad with no Instagram identity is rejected by Meta (error_subcode 1772103), and
+    # Meta's implicit page-backed resolution is unreliable, so resolve one explicitly here (a
+    # page-connected Instagram account if the Page has one, else its Page-Backed Instagram Account,
+    # created on demand). Only placement-customized inputs (which carry the ad set's
+    # publisher_platforms) trigger this; an explicit instagram_actor_id always wins, and
+    # Facebook-only / plain single-image / video creatives are left untouched.
+    resolved_instagram_user_id = instagram_actor_id
+    pac_targets_instagram = (
+        (bool(feed_image_hash) or bool(story_image_hash))
+        and "instagram" in (publisher_platforms or ["facebook", "instagram"])
+    )
+    if not resolved_instagram_user_id and pac_targets_instagram:
+        resolved_instagram_user_id, ig_error = await _resolve_page_instagram_user_id(page_id, access_token)
+        if ig_error:
+            return json.dumps({
+                "error": "Could not resolve an Instagram identity for the page",
+                "details": ig_error,
+            })
+
     if use_pac:
         platforms = publisher_platforms or ["facebook", "instagram"]
         # Always anchor Facebook in the creative's customization rules, even when the ad set is
@@ -825,8 +893,8 @@ async def create_ad_creative(
         # Instagram-only ad set.
         creative_platforms = platforms if "facebook" in platforms else ["facebook", *platforms]
         object_story_spec = {"page_id": page_id}
-        if instagram_actor_id:
-            object_story_spec["instagram_user_id"] = instagram_actor_id
+        if resolved_instagram_user_id:
+            object_story_spec["instagram_user_id"] = resolved_instagram_user_id
         creative_data["object_story_spec"] = object_story_spec
 
         asset_feed_spec = {
@@ -903,6 +971,11 @@ async def create_ad_creative(
             }
         }
 
+        # A collapsed placement-customized creative (identical feed/story hash) still needs the
+        # resolved Instagram identity when it runs on Instagram.
+        if resolved_instagram_user_id and (feed_image_hash or story_image_hash):
+            creative_data["object_story_spec"]["instagram_user_id"] = resolved_instagram_user_id
+
         if message:
             creative_data["object_story_spec"]["link_data"]["message"] = message
 
@@ -917,7 +990,7 @@ async def create_ad_creative(
                 "type": call_to_action_type
             }
     
-    if instagram_actor_id and not use_pac:
+    if instagram_actor_id and not use_pac and not (feed_image_hash or story_image_hash):
         creative_data["instagram_actor_id"] = instagram_actor_id
 
     # Prepare the API endpoint for creating a creative
