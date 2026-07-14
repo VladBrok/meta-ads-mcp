@@ -200,6 +200,10 @@ async def create_adset(
     
     if bid_strategy is not None:
         params["bid_strategy"] = getattr(bid_strategy, 'value', bid_strategy)
+    elif (daily_budget is not None or lifetime_budget is not None) and bid_amount is None:
+        # Ad-set-level budget without a bid strategy: Meta defaults to LOWEST_COST_WITH_BID_CAP
+        # (needs bid_amount). Default to automatic bidding to avoid a 400.
+        params["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP"
 
     if daily_budget is not None:
         params["daily_budget"] = str(daily_budget)

@@ -184,7 +184,11 @@ async def create_campaign(
 
     if bid_strategy is not None:
         params["bid_strategy"] = getattr(bid_strategy, 'value', bid_strategy)
-    
+    elif has_campaign_budget and bid_cap is None:
+        # With a campaign-level budget (CBO) Meta otherwise defaults to LOWEST_COST_WITH_BID_CAP,
+        # which requires a bid cap. Default to automatic bidding so the create call does not 400.
+        params["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP"
+
     if bid_cap is not None:
         params["bid_cap"] = str(bid_cap)
     
