@@ -196,7 +196,7 @@ For local installation configuration, authentication options, and advanced techn
       - `start_time`, `end_time`: Optional start/end times (ISO 8601)
       - `access_token` (optional): Meta API access token
    - Returns: Confirmation with new ad set details
-   - Note: Budgets are configured at the campaign level only; ad sets do not accept budgets in this MCP.
+   - Note: Budgets are configured at the campaign level only; ad sets do not accept budgets in this MCP, because Meta rejects a budget set at both the campaign and the ad set level.
 
 11. `mcp_meta_ads_get_ads`
     - Get ads for a Meta Ads account with optional filtering

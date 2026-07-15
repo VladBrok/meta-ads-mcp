@@ -82,6 +82,8 @@ async def get_adset_details(access_token: str = None, adset_id: str = None) -> s
     return json.dumps(data)
 
 
+# Budgets are deliberately absent here: Meta rejects a campaign that carries a budget at both the
+# campaign and the ad set level, and models kept setting both, so the ad-set affordance was removed.
 @mcp_server.tool()
 @meta_api_tool
 async def create_adset(
@@ -94,8 +96,6 @@ async def create_adset(
     billing_event: Optional[BillingEvent] = None,
     bid_amount = None,
     bid_strategy: Optional[BidStrategy] = None,
-    daily_budget = None,
-    lifetime_budget = None,
     start_time: str = None,
     end_time: str = None,
     dsa_beneficiary: str = None,
@@ -113,10 +113,6 @@ async def create_adset(
         campaign_id: Meta Ads campaign ID this ad set belongs to
         name: Ad set name
         status: Initial ad set status (default: PAUSED)
-        daily_budget: Daily budget in account currency (in cents) as a string. Set this for ad-set-level budgeting,
-                     i.e. when the parent campaign carries no campaign-level budget. Omit it when the budget is at the campaign level.
-        lifetime_budget: Lifetime budget in account currency (in cents) as a string. Alternative to daily_budget for
-                     ad-set-level budgeting. Omit it when the budget is at the campaign level.
         targeting: Pass 'targeting' as a complete dictionary object containing all targeting specifications.
                   Do not pass individual targeting fields as separate parameters.
                   Use targeting_automation.advantage_audience=1 for automatic audience finding.
@@ -140,8 +136,9 @@ async def create_adset(
         optimization_goal: Conversion optimization goal
         billing_event: How you're charged
         bid_amount: Bid amount in account currency (in cents)
-        bid_strategy: Bid strategy. If you enable campaign budget optimization, you should set bid_strategy at the parent campaign level.
-                     If you do not enable campaign budget optimization, you should set bid_strategy at the ad set level.
+        bid_strategy: Bid strategy. Ad sets do not carry a budget in this MCP — the budget always lives on the parent
+                     campaign — so set bid_strategy on the campaign via create_campaign. Only pass it here when you
+                     deliberately want to override the campaign's bid strategy for this ad set.
         start_time: Start time in ISO 8601 format (e.g., '2023-12-01T12:00:00-0800'). Defaults to today if not provided.
         end_time: End time in ISO 8601 format
         dsa_beneficiary: DSA beneficiary (person/organization benefiting from ads) for European compliance
@@ -200,16 +197,6 @@ async def create_adset(
     
     if bid_strategy is not None:
         params["bid_strategy"] = getattr(bid_strategy, 'value', bid_strategy)
-    elif (daily_budget is not None or lifetime_budget is not None) and bid_amount is None:
-        # Ad-set-level budget without a bid strategy: Meta defaults to LOWEST_COST_WITH_BID_CAP
-        # (needs bid_amount). Default to automatic bidding to avoid a 400.
-        params["bid_strategy"] = "LOWEST_COST_WITHOUT_CAP"
-
-    if daily_budget is not None:
-        params["daily_budget"] = str(daily_budget)
-
-    if lifetime_budget is not None:
-        params["lifetime_budget"] = str(lifetime_budget)
 
     if not start_time:
         start_time = datetime.utcnow().strftime('%Y-%m-%dT00:00:00+0000')
